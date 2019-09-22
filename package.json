@@ -1,0 +1,27 @@
+{
+  "name": "ammobin-cdk",
+  "version": "0.1.0",
+  "bin": {
+    "ammobin-cdk": "dist/bin/ammobin-cdk.js"
+  },
+  "scripts": {
+    "build": "tsc --outDir dist",
+    "watch": "tsc -w",
+    "cdk": "cdk"
+  },
+  "devDependencies": {
+    "@aws-cdk/aws-cloudfront": "^1.8.0",
+    "@aws-cdk/aws-s3": "^1.8.0",
+    "aws-cdk": "^1.8.0",
+    "ts-node": "^8.4.1",
+    "typescript": "^3.6.3"
+  },
+  "dependencies": {
+    "@aws-cdk/aws-apigateway": "^1.8.0",
+    "@aws-cdk/aws-dynamodb": "^1.8.0",
+    "@aws-cdk/aws-sns": "^1.8.0",
+    "@aws-cdk/aws-sns-subscriptions": "^1.8.0",
+    "@aws-cdk/aws-sqs": "^1.8.0",
+    "@aws-cdk/core": "^1.8.0"
+  }
+}

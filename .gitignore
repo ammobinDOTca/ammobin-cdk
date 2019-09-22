@@ -1,0 +1,12 @@
+dist
+node_modules
+# src includes client + api folders (already own git repos)
+src
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+
+awscli-bundle.zip
+awscli-bundle/
+ass/

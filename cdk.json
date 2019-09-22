@@ -1,0 +1,3 @@
+{
+  "app": "npx ts-node bin/ammobin-cdk.ts"
+}
