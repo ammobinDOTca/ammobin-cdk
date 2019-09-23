@@ -6,6 +6,11 @@ import cloudfront = require('@aws-cdk/aws-cloudfront')
 import acm = require('@aws-cdk/aws-certificatemanager')
 
 export class AmmobinApiStack extends cdk.Construct {
+  // shit we expose
+  code: lambda.AssetCode
+  lambda: lambda.Function
+  api: apigateway.RestApi
+
   constructor(
     scope: cdk.Construct,
     id: string,
@@ -14,6 +19,8 @@ export class AmmobinApiStack extends cdk.Construct {
       src: string
       handler: string
       name: string
+      // env to pass to lambda
+      environment: any
     }
   ) {
     super(scope, id)
@@ -22,6 +29,7 @@ export class AmmobinApiStack extends cdk.Construct {
       code: apiCode,
       handler: props.handler,
       runtime: lambda.Runtime.NODEJS_10_X,
+      environment: props.environment,
     })
 
     const api = new apigateway.RestApi(this, props.name + 'AGW', {
@@ -43,5 +51,8 @@ export class AmmobinApiStack extends cdk.Construct {
     api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
     const clientResource = api.root.addResource('{proxy+}')
     clientResource.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
+    this.code = apiCode
+    this.lambda = apiLambda
+    this.api = api
   }
 }

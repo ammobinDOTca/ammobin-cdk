@@ -18,3 +18,30 @@
 todo params:
 region
 base domain
+
+queue
+api + dynamo
+refresher
+log exporter
+
+merge api + client changes to normal repo
+develop install strat for min nuxt uploads
+s3 upload of generated nuxt static assets
+
+find way to serve static route assets (like robot.txt, sitemap, favicon)
+-> edge lambda
+custom public domain for cloudfront
+
+logging + metrics
+
+blog post explaining all the mirgation stuff
+
+- cloud front root domain
+- nuxt lambda size
+
+cost differences
+
+sns vs sqs when writting to dynamo.... (1 event & queue or X events with sns
+) -> sqs generates empty lambda invocations checking for messages...
+
+good example: https://github.com/aws-samples/aws-cdk-changelogs-demo
