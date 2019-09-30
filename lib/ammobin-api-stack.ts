@@ -4,6 +4,7 @@ import cdk = require('@aws-cdk/core')
 import s3 = require('@aws-cdk/aws-s3')
 import cloudfront = require('@aws-cdk/aws-cloudfront')
 import acm = require('@aws-cdk/aws-certificatemanager')
+import { Duration } from '@aws-cdk/core'
 
 export class AmmobinApiStack extends cdk.Construct {
   // shit we expose
@@ -21,6 +22,7 @@ export class AmmobinApiStack extends cdk.Construct {
       name: string
       // env to pass to lambda
       environment: any
+      timeout?: Duration
     }
   ) {
     super(scope, id)
@@ -30,6 +32,7 @@ export class AmmobinApiStack extends cdk.Construct {
       handler: props.handler,
       runtime: lambda.Runtime.NODEJS_10_X,
       environment: props.environment,
+      timeout: props.timeout || Duration.seconds(3),
     })
 
     const api = new apigateway.RestApi(this, props.name + 'AGW', {
@@ -50,7 +53,7 @@ export class AmmobinApiStack extends cdk.Construct {
     api.domainName
     api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
     const clientResource = api.root.addResource('{proxy+}')
-    clientResource.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
+    clientResource.addMethod('ANY', new apigateway.LambdaIntegration(apiLambda))
     this.code = apiCode
     this.lambda = apiLambda
     this.api = api

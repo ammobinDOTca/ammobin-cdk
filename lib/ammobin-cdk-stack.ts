@@ -31,6 +31,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       src: 'src/ammobin-client-built',
       url: CLIENT_URL, // had trouble during development
       environment: {},
+      timeout: Duration.seconds(30),
     })
 
     const api = new AmmobinApiStack(this, 'ammobin-api', {
