@@ -14,6 +14,7 @@ phases:
       - cd ammobin-api && npm install
       - cd ..
       - mkdir ammobin-client-built
+      - cd ..
   build:
     commands:
       - npm run build
@@ -21,6 +22,7 @@ phases:
       - npm run build && npm run generate
       - cd ../ammobin-api
       - npm run build
+      - cd ../..
   post_build:
     commands:
       - npm run cdk deploy
