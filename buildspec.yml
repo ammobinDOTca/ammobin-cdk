@@ -26,7 +26,8 @@ phases:
   # post_build:
   #   commands:
   #     - npm run cdk deploy AmmobinCdkStack
+  # todo: IAM permissions
 artifacts:
   files:
-    - src/ammobin-client/dist/**/*
+    - ./**/*
   base-directory: src/ammobin-client/dist

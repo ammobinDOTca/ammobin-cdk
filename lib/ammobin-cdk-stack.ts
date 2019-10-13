@@ -14,8 +14,7 @@ export class AmmobinCdkStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
     super(scope, id, props)
 
-    // 20190922 BUG , type miss match...
-    const itemsTable = new dynamodb.Table(this as any, 'table', {
+    const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: 'ammobinItems',
       partitionKey: {
         name: 'id',
@@ -25,16 +24,16 @@ export class AmmobinCdkStack extends cdk.Stack {
       // todo: enable streams?
     })
 
-    new AmmobinApiStack(this, 'ammobin-client', {
-      handler: 'lambda.nuxt',
-      name: 'nuxtLambda',
-      src: 'src/ammobin-client-built',
-      url: CLIENT_URL, // had trouble during development
-      environment: {
-        NODE_ENV: 'production',
-      },
-      timeout: Duration.seconds(30),
-    })
+    // new AmmobinApiStack(this, 'ammobin-client', {
+    //   handler: 'lambda.nuxt',
+    //   name: 'nuxtLambda',
+    //   src: 'src/ammobin-client-built',
+    //   url: CLIENT_URL, // had trouble during development
+    //   environment: {
+    //     NODE_ENV: 'production',
+    //   },
+    //   timeout: Duration.seconds(30),
+    // })
 
     const api = new AmmobinApiStack(this, 'ammobin-api', {
       handler: 'dist/api/lambda.handler',
@@ -48,7 +47,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       },
     })
     // typescript bug?
-    itemsTable.grantReadData(api.lambda as any)
+    itemsTable.grantReadData(api.lambda)
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
@@ -65,21 +64,9 @@ export class AmmobinCdkStack extends cdk.Stack {
         // todo: make this cleaner + other people can use
         acmCertRef: 'arn:aws:acm:us-east-1:911856505652:certificate/c47819c6-fcaf-46e5-aef6-9167413156b8',
         names: [PUBLIC_URL],
+        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
       },
       originConfigs: [
-        // default proxy is for nuxt (to handle home page routing)
-        // {
-        //   customOriginSource: {
-        //     domainName: CLIENT_URL,
-        //   },
-        //   behaviors: [
-        //     {
-        //       isDefaultBehavior: true,
-        //       allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
-        //     },
-        //   ],
-        // },
-        // route requests for static assets to s3 bucket (where things have to be uploaded to outside of cdk deploy)
         {
           s3OriginSource: {
             s3BucketSource: siteBucket,
