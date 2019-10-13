@@ -2,6 +2,8 @@ version: 0.2
 
 phases:
   install:
+    runtime-versions:
+      nodejs: 10
     commands:
       - npm install
       - mkdir src && cd src
@@ -11,8 +13,6 @@ phases:
       - cd ../ammobin-api && npm install
       - mkdir ammobin-client-built
   build:
-    runtime-version:
-      nodejs: 10
     commands:
       - npm run build
       - cd src/ammobin-client
@@ -20,8 +20,6 @@ phases:
       - cd ../ammobin-api
       - npm run build
   post_build:
-    runtime-version:
-      nodejs: 10
     commands:
       - npm run cdk deploy
 artifacts:
