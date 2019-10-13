@@ -25,7 +25,7 @@ phases:
       - cd ../..
   post_build:
     commands:
-      - npm run cdk deploy
+      - npm run cdk deploy AmmobinCdkStack
 artifacts:
   files:
     - src/ammobin-client/generated/**/*
