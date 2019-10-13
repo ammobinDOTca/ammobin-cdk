@@ -45,3 +45,11 @@ sns vs sqs when writting to dynamo.... (1 event & queue or X events with sns
 ) -> sqs generates empty lambda invocations checking for messages...
 
 good example: https://github.com/aws-samples/aws-cdk-changelogs-demo
+
+```
+TODO: build client and copy
+cd src/ammobin-api && npm run build && cd ../../ && npm run build && cdk deploy
+```
+
+note: lambda for nuxt is too slow....
+-> generate + upload to s3 on schedule

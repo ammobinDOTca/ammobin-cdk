@@ -30,7 +30,9 @@ export class AmmobinCdkStack extends cdk.Stack {
       name: 'nuxtLambda',
       src: 'src/ammobin-client-built',
       url: CLIENT_URL, // had trouble during development
-      environment: {},
+      environment: {
+        NODE_ENV: 'production',
+      },
       timeout: Duration.seconds(30),
     })
 
@@ -42,6 +44,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       environment: {
         TABLE_NAME: itemsTable.tableName,
         PRIMARY_KEY: 'id',
+        //NODE_ENV: 'production', (nice to leave api playground open...)
       },
     })
     // typescript bug?
@@ -57,28 +60,25 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
       // TODO: manually create this cert in us-east-1 OR use separate stack...
-      // aliasConfiguration: {
-      //   acmCertRef: new acm.Certificate(this, 'mainCert', {
-      //     domainName: PUBLIC_URL,
-      //     validationMethod: acm.ValidationMethod.DNS,
-      //   }).certificateArn,
-      //   names: [PUBLIC_URL],
-      //   sslMethod: cloudfront.SSLMethod.SNI,
-      //   securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
-      // },
+      aliasConfiguration: {
+        // from output of ammobin global cdk stack in us-east-1...
+        // todo: make this cleaner + other people can use
+        acmCertRef: 'arn:aws:acm:us-east-1:911856505652:certificate/c47819c6-fcaf-46e5-aef6-9167413156b8',
+        names: [PUBLIC_URL],
+      },
       originConfigs: [
         // default proxy is for nuxt (to handle home page routing)
-        {
-          customOriginSource: {
-            domainName: CLIENT_URL,
-          },
-          behaviors: [
-            {
-              isDefaultBehavior: true,
-              allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
-            },
-          ],
-        },
+        // {
+        //   customOriginSource: {
+        //     domainName: CLIENT_URL,
+        //   },
+        //   behaviors: [
+        //     {
+        //       isDefaultBehavior: true,
+        //       allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+        //     },
+        //   ],
+        // },
         // route requests for static assets to s3 bucket (where things have to be uploaded to outside of cdk deploy)
         {
           s3OriginSource: {
@@ -86,8 +86,8 @@ export class AmmobinCdkStack extends cdk.Stack {
           },
           behaviors: [
             {
-              isDefaultBehavior: false,
-              pathPattern: '_nuxt/*',
+              isDefaultBehavior: true,
+              // pathPattern: '_nuxt/*',
             },
           ],
         },
@@ -126,8 +126,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     // todo: run this every so often cloudwatch schedule events
 
     workQueue.grantSendMessages(refresherLambda)
-
-    // todo: future opt -> 2 lambdas, high memeory and low memory...
+    //todo: future opt -> 2 lambdas, high memeory and low memory...
     // with 2 sqs queues
     // question, why not sns with X cloudwatch
     const workerLamdbaCode = new lambda.AssetCode('src/ammobin-api')

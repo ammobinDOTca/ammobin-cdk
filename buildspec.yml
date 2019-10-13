@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - npm install
+      - mkdir src && cd src
+      - git clone https://github.com/ammobinDOTca/ammobin-client.git
+      - cd ammobin-client && npm install
+      - git clone https://github.com/ammobinDOTca/ammobin-api.git
+      - cd ../ammobin-api && npm install
+      - mkdir ammobin-client-built
+  build:
+    runtime-version:
+      nodejs: 10
+    commands:
+      - npm run build
+      - cd src/ammobin-client
+      - npm run build && npm run generate
+      - cd ../ammobin-api
+      - npm run build
+  post_build:
+    runtime-version:
+      nodejs: 10
+    commands:
+      - npm run cdk deploy
+artifacts:
+  files:
+    - src/ammobin-client/generated/**/*
+cache:
+  paths:
+    - src/ammobin-api/node_modules/**/*
+    - src/ammobin-client/node_modules/**/*
+    - node_modules/**/*
