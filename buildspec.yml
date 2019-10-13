@@ -29,3 +29,4 @@ phases:
 artifacts:
   files:
     - src/ammobin-client/dist/**/*
+  base-directory: src/ammobin-client/dist
