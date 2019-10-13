@@ -9,8 +9,10 @@ phases:
       - mkdir src && cd src
       - git clone https://github.com/ammobinDOTca/ammobin-client.git
       - cd ammobin-client && npm install
+      - cd ..
       - git clone https://github.com/ammobinDOTca/ammobin-api.git
-      - cd ../ammobin-api && npm install
+      - cd ammobin-api && npm install
+      - cd ..
       - mkdir ammobin-client-built
   build:
     commands:
