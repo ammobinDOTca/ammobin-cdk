@@ -24,16 +24,16 @@ export class AmmobinCdkStack extends cdk.Stack {
       // todo: enable streams?
     })
 
-    // new AmmobinApiStack(this, 'ammobin-client', {
-    //   handler: 'lambda.nuxt',
-    //   name: 'nuxtLambda',
-    //   src: 'src/ammobin-client-built',
-    //   url: CLIENT_URL, // had trouble during development
-    //   environment: {
-    //     NODE_ENV: 'production',
-    //   },
-    //   timeout: Duration.seconds(30),
-    // })
+    new AmmobinApiStack(this, 'ammobin-client', {
+      handler: 'lambda.nuxt',
+      name: 'nuxtLambda',
+      src: 'src/ammobin-client-built',
+      url: CLIENT_URL, // had trouble during development
+      environment: {
+        NODE_ENV: 'production',
+      },
+      timeout: Duration.seconds(30),
+    })
 
     const api = new AmmobinApiStack(this, 'ammobin-api', {
       handler: 'dist/api/lambda.handler',
@@ -70,11 +70,23 @@ export class AmmobinCdkStack extends cdk.Stack {
         {
           s3OriginSource: {
             s3BucketSource: siteBucket,
+            // had to manually override to be sub folder (code build does not output propeerly
+          },
+          behaviors: [
+            {
+              // isDefaultBehavior: true,
+              pathPattern: '_nuxt/*',
+            },
+          ],
+        },
+        {
+          customOriginSource: {
+            domainName: CLIENT_URL,
           },
           behaviors: [
             {
               isDefaultBehavior: true,
-              // pathPattern: '_nuxt/*',
+              allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
             },
           ],
         },
@@ -120,7 +132,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const workerLambda = new lambda.Function(this, 'worker', {
       code: workerLamdbaCode,
       handler: 'dist/worker/lambda.handler',
-      runtime: lambda.Runtime.NODEJS_10_X,
+      runtime: lambda.Runtime.NODEJS_8_10, // as per https://github.com/alixaxel/chrome-aws-lambda
       timeout: Duration.minutes(3),
       memorySize: 1024,
       environment: {
@@ -128,8 +140,8 @@ export class AmmobinCdkStack extends cdk.Stack {
         PRIMARY_KEY: 'id',
       },
     })
-    workerLambda.addEventSource(new SqsEventSource(workQueue as any) as any)
-    itemsTable.grantWriteData(workerLambda as any)
+    workerLambda.addEventSource(new SqsEventSource(workQueue))
+    itemsTable.grantWriteData(workerLambda)
     //workQueue.grantConsumeMessages(workerLambda)
 
     //QueueUrl
