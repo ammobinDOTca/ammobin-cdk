@@ -15,6 +15,24 @@
    -> copy down acm dns validation check
    -> set up cname from client.aws.ammobin.ca to 'Target Domain Name' from custom domains tab on api gateway. set a short TTL on it (for easier turn around time debugging if things go wrong)
 
+---
+
+# issues
+
+## lambda size limit
+
+ammobin-client is too large to be uploaded as a lambda
+
+## cold start
+
+give enough memory to lambda so that it will not reach the limit to service a request
+
+## why not ecs?
+
+https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any network costs
+
+---
+
 todo params:
 region
 base domain
