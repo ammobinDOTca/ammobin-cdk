@@ -5,14 +5,15 @@ import { AmmobinGlobalCdkStack } from '../lib/ammobin-global-cdk-stack'
 
 const app = new cdk.App()
 
-new AmmobinCdkStack(app, 'AmmobinCdkStack', {
-  env: {
-    region: 'ca-central-1',
-  },
-})
-
-new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
+const globalAmmo = new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   env: {
     region: 'us-east-1',
   },
 })
+
+new AmmobinCdkStack(app, 'AmmobinCdkStack', {
+  edgeLamdaVersion: globalAmmo.nuxtRerouterVersion,
+  env: {
+    region: 'ca-central-1',
+  },
+}).addDependency(globalAmmo)

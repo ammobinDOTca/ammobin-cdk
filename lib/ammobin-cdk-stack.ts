@@ -10,9 +10,23 @@ import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources'
 import { AmmobinApiStack } from './ammobin-api-stack'
 import { API_URL, CLIENT_URL, PUBLIC_URL } from './constants'
 import { Duration } from '@aws-cdk/core'
+
+import sm = require('@aws-cdk/aws-secretsmanager')
+
+interface ASS extends cdk.StackProps {
+  // edgeLambdaArn: string
+  // edgeLamda: lambda.Function
+  edgeLamdaVersion: lambda.IVersion
+}
+
 export class AmmobinCdkStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+  edgeLambdaArn: string
+  edgeLamda: lambda.Function
+  edgeLamdaVersion: lambda.IVersion
+  // todo: type props
+  constructor(scope: cdk.App, id: string, props: ASS) {
     super(scope, id, props)
+    console.log(props)
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: 'ammobinItems',
@@ -74,22 +88,30 @@ export class AmmobinCdkStack extends cdk.Stack {
           },
           behaviors: [
             {
-              // isDefaultBehavior: true,
-              pathPattern: '_nuxt/*',
-            },
-          ],
-        },
-        {
-          customOriginSource: {
-            domainName: CLIENT_URL,
-          },
-          behaviors: [
-            {
+              lambdaFunctionAssociations: [
+                {
+                  eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
+                  lambdaFunction: props.edgeLamdaVersion,
+                },
+              ],
               isDefaultBehavior: true,
-              allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+              // pathPattern: '_nuxt/*',
             },
           ],
+
+          //originPath:/codeBuildFolder???
         },
+        // {
+        //   customOriginSource: {
+        //     domainName: CLIENT_URL,
+        //   },
+        //   behaviors: [
+        //     {
+        //       // isDefaultBehavior: true,
+        //       allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+        //     },
+        //   ],
+        // },
         // route api requests to the api lambda + gateway
         {
           customOriginSource: {
@@ -106,6 +128,11 @@ export class AmmobinCdkStack extends cdk.Stack {
       ],
     })
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId })
+
+    const rendertronUrl = new sm.Secret(this, 'rendertronUrl', {
+      secretName: 'rendertronUrl',
+      description: 'url to rendertron deployed to herkou',
+    })
 
     const workQueue = new sqs.Queue(this, 'workQueue', {
       visibilityTimeout: Duration.minutes(3), // same as worker
@@ -141,6 +168,8 @@ export class AmmobinCdkStack extends cdk.Stack {
       },
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))
+
+    rendertronUrl.grantRead(workerLambda)
     itemsTable.grantWriteData(workerLambda)
     //workQueue.grantConsumeMessages(workerLambda)
 
