@@ -16,13 +16,14 @@ import sm = require('@aws-cdk/aws-secretsmanager')
 interface ASS extends cdk.StackProps {
   // edgeLambdaArn: string
   // edgeLamda: lambda.Function
-  edgeLamdaVersion: lambda.IVersion
+  // edgeLamdaVersion: string //lambda.IVersion
+  // edgeLamdaArn: string
 }
 
 export class AmmobinCdkStack extends cdk.Stack {
-  edgeLambdaArn: string
-  edgeLamda: lambda.Function
-  edgeLamdaVersion: lambda.IVersion
+  // edgeLambdaArn: string
+  // edgeLamda: lambda.Function
+  // edgeLamdaVersion: lambda.IVersion
   // todo: type props
   constructor(scope: cdk.App, id: string, props: ASS) {
     super(scope, id, props)
@@ -71,63 +72,9 @@ export class AmmobinCdkStack extends cdk.Stack {
     })
     new cdk.CfnOutput(this, 'StaticBucket', { value: siteBucket.bucketName })
 
-    const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-      // TODO: manually create this cert in us-east-1 OR use separate stack...
-      aliasConfiguration: {
-        // from output of ammobin global cdk stack in us-east-1...
-        // todo: make this cleaner + other people can use
-        acmCertRef: 'arn:aws:acm:us-east-1:911856505652:certificate/c47819c6-fcaf-46e5-aef6-9167413156b8',
-        names: [PUBLIC_URL],
-        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
-      },
-      originConfigs: [
-        {
-          s3OriginSource: {
-            s3BucketSource: siteBucket,
-            // had to manually override to be sub folder (code build does not output propeerly
-          },
-          behaviors: [
-            {
-              lambdaFunctionAssociations: [
-                {
-                  eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
-                  lambdaFunction: props.edgeLamdaVersion,
-                },
-              ],
-              isDefaultBehavior: true,
-              // pathPattern: '_nuxt/*',
-            },
-          ],
-
-          //originPath:/codeBuildFolder???
-        },
-        // {
-        //   customOriginSource: {
-        //     domainName: CLIENT_URL,
-        //   },
-        //   behaviors: [
-        //     {
-        //       // isDefaultBehavior: true,
-        //       allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
-        //     },
-        //   ],
-        // },
-        // route api requests to the api lambda + gateway
-        {
-          customOriginSource: {
-            domainName: API_URL,
-          },
-          behaviors: [
-            {
-              isDefaultBehavior: false,
-              pathPattern: 'api/*',
-              allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
-            },
-          ],
-        },
-      ],
-    })
-    new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId })
+    // can even do cloudfront from ca-central-1?
+    // may need to move this to global stack
+    // and pass it the urls of the ca-central-1 stuff?
 
     const rendertronUrl = new sm.Secret(this, 'rendertronUrl', {
       secretName: 'rendertronUrl',

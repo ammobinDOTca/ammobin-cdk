@@ -12,8 +12,9 @@ const globalAmmo = new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
 })
 
 new AmmobinCdkStack(app, 'AmmobinCdkStack', {
-  edgeLamdaVersion: globalAmmo.nuxtRerouterVersion,
+  // edgeLamdaVersion: globalAmmo.nuxtRerouterVersion.version,
+  // edgeLamdaArn: globalAmmo.nuxtRerouterVersion.functionArn,
   env: {
     region: 'ca-central-1',
   },
-}).addDependency(globalAmmo)
+}) //.addDependency(globalAmmo)
