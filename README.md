@@ -34,23 +34,22 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 ---
 
 todo params:
-region
+stack region
 base domain
 
-queue
+todo
 api + dynamo
-refresher
+-> handles single subtype (will need to update UI)
+-> split routes into multiple lambdas (will help on cold boots)
 log exporter
 
-merge api + client changes to normal repo
-develop install strat for min nuxt uploads
-s3 upload of generated nuxt static assets
+s3 upload of generated nuxt (code build?)
 
-find way to serve static route assets (like robot.txt, sitemap, favicon)
--> edge lambda
-custom public domain for cloudfront
+- sub route in s3 for different folders
 
 logging + metrics
+
+- export aws costing data? + graphs
 
 blog post explaining all the mirgation stuff
 
@@ -64,6 +63,8 @@ sns vs sqs when writting to dynamo.... (1 event & queue or X events with sns
 
 good example: https://github.com/aws-samples/aws-cdk-changelogs-demo
 
+clean up old assets on schedule
+
 ```
 TODO: build client and copy
 cd src/ammobin-api && npm run build && cd ../../ && npm run build && cdk deploy
@@ -71,3 +72,4 @@ cd src/ammobin-api && npm run build && cd ../../ && npm run build && cdk deploy
 
 note: lambda for nuxt is too slow....
 -> generate + upload to s3 on schedule
+-> created edge lambda to transform ammobin.ca/about -> s3bucket/about.html (needed to fix queries)
