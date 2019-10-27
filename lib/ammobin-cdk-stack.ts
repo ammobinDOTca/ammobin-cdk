@@ -76,6 +76,9 @@ export class AmmobinCdkStack extends cdk.Stack {
     // may need to move this to global stack
     // and pass it the urls of the ca-central-1 stuff?
 
+    // TODO: manually update this key: https://ca-central-1.console.aws.amazon.com/secretsmanager/home?region=ca-central-1#/secret?name=rendertronUrl
+    //https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_update-secret.html
+    // note: not used currently b/c using internal pupeteer
     const rendertronUrl = new sm.Secret(this, 'rendertronUrl', {
       secretName: 'rendertronUrl',
       description: 'url to rendertron deployed to herkou',
@@ -112,13 +115,14 @@ export class AmmobinCdkStack extends cdk.Stack {
       environment: {
         TABLE_NAME: itemsTable.tableName,
         PRIMARY_KEY: 'id',
+        USE_AWS_SERCRET: 'true',
       },
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))
 
     rendertronUrl.grantRead(workerLambda)
     itemsTable.grantWriteData(workerLambda)
-    //workQueue.grantConsumeMessages(workerLambda)
+    workQueue.grantConsumeMessages(workerLambda)
 
     //QueueUrl
   }
