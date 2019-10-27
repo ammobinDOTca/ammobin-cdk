@@ -26,12 +26,16 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
 
     const apiCode = new lambda.AssetCode('dist/edge-lambdas')
- const lambdaRole = new iam.Role(this, "LambdaExecutionRole", {
+    const lambdaRole = new iam.Role(this, 'LambdaExecutionRole', {
       assumedBy: new iam.CompositePrincipal(
-        new iam.ServicePrincipal("lambda.amazonaws.com"),
-        new iam.ServicePrincipal("edgelambda.amazonaws.com")
-      )
-    });
+        new iam.ServicePrincipal('lambda.amazonaws.com'),
+        new iam.ServicePrincipal('edgelambda.amazonaws.com')
+      ),
+      managedPolicies: [
+        // need to add this back in so we can write logs
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+      ],
+    })
     // https://github.com/bogdal/aws-cdk-website/blob/master/src/SinglePageApplication.ts#L57
     const nuxtRerouter = new lambda.Function(this, 'nuxtRerouter', {
       code: apiCode,
@@ -39,14 +43,16 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_8_10,
       environment: {},
       timeout: Duration.seconds(3),
-      role: lambdaRole
+      role: lambdaRole,
     }) //.addPermission()
 
     new cdk.CfnOutput(this, 'nuxtRerouterArn', { value: nuxtRerouter.functionArn })
 
     // this way it updates version only in case lambda code changes
-    const version =  new lambda.Version(this, "OriginRequestLambdaVersion", { lambda: nuxtRerouter})
-//nuxtRerouter.addVersion(':sha256:' + sha256('edge-lambdas/nuxt-rerouter.ts'))
+    // version has to start with a letter
+    const version = new lambda.Version(this, 'V' + sha256('edge-lambdas/nuxt-rerouter.ts'), {
+      lambda: nuxtRerouter,
+    })
     this.nuxtRerouterVersion = version
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {

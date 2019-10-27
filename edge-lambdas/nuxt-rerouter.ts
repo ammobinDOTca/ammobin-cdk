@@ -29,10 +29,14 @@
   ]
 }*/
 
-export function handler(event, context, cb) {
+import { CloudFrontRequestEvent, Context, Callback } from 'aws-lambda'
+
+export function handler(event: CloudFrontRequestEvent, context: Context, cb: Callback) {
   console.log(event)
   var request = event.Records[0].cf.request
-  request.headers['hello'] = [{ key: 'hello', value: 'world' }]
+  console.log('original request.uri', request.uri)
+  request.uri += '.html'
+  console.log('nuxt reroute request.uri', request.uri)
 
   cb(null, request)
 }
