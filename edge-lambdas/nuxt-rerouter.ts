@@ -30,12 +30,18 @@
 }*/
 
 import { CloudFrontRequestEvent, Context, Callback } from 'aws-lambda'
+import { URL } from 'url'
 
 export function handler(event: CloudFrontRequestEvent, context: Context, cb: Callback) {
   console.log(event)
   var request = event.Records[0].cf.request
   console.log('original request.uri', request.uri)
-  request.uri += '.html'
+  const url = new URL(request.uri)
+  // if not a nuxt static assets AND does not have an extension
+  if (!request.uri.includes('/_nuxt/') && !url.pathname.includes('.')) {
+    request.uri += '.html'
+  }
+
   console.log('nuxt reroute request.uri', request.uri)
 
   cb(null, request)
