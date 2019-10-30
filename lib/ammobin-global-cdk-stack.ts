@@ -58,8 +58,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       bucketName: 'ammobin-aws-site',
       websiteIndexDocument: 'index.html',
-      websiteErrorDocument: 'error.html',
-      publicReadAccess: true,
+      websiteErrorDocument: '200.html',
+      publicReadAccess: false,
 
       // The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
       // the new bucket, and it will remain in your account until manually deleted. By setting the policy to
