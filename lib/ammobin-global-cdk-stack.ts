@@ -10,6 +10,7 @@ import s3 = require('@aws-cdk/aws-s3')
 import cloudfront = require('@aws-cdk/aws-cloudfront')
 import s3deploy = require('@aws-cdk/aws-s3-deployment')
 import sha256 = require('sha256-file')
+import { PolicyStatement, CanonicalUserPrincipal } from '@aws-cdk/aws-iam'
 
 export class AmmobinGlobalCdkStack extends cdk.Stack {
   cert: acm.Certificate
@@ -54,19 +55,34 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       lambda: nuxtRerouter,
     })
     this.nuxtRerouterVersion = version
+
+    const cfIdentityResource = new cloudfront.CfnCloudFrontOriginAccessIdentity(this, 'siteBucketAccess', {
+      cloudFrontOriginAccessIdentityConfig: {
+        comment: 'let cloudfront access the site bucket'
+      }
+    })
+
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
-      bucketName: 'ammobin-aws-site',
+      bucketName: 'ammobin-aws-site', // todo: this needs to be set by cdk for this stack to be deployed more than once
       websiteIndexDocument: 'index.html',
       websiteErrorDocument: '200.html',
       publicReadAccess: false,
-
+      encryption: s3.BucketEncryption.S3_MANAGED,
       // The default removal policy is RETAIN, which means that cdk destroy will not attempt to delete
       // the new bucket, and it will remain in your account until manually deleted. By setting the policy to
       // DESTROY, cdk destroy will attempt to delete the bucket, but will error if the bucket is not empty.
       removalPolicy: cdk.RemovalPolicy.DESTROY, // NOT recommended for production code
     })
     new cdk.CfnOutput(this, 'Bucket', { value: siteBucket.bucketName })
+
+    new s3.BucketPolicy(this, "BucketPolicy", {
+      bucket: siteBucket,
+    }).document.addStatements(new PolicyStatement({
+      actions: ['s3:GetObject'],
+      principals: [new CanonicalUserPrincipal(cfIdentityResource.attrS3CanonicalUserId)],
+      resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
+    }))
 
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
       aliasConfiguration: {
@@ -80,7 +96,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         {
           s3OriginSource: {
             s3BucketSource: siteBucket,
-            // had to manually override to be sub folder (code build does not output propeerly
+            originAccessIdentityId: cfIdentityResource.ref
           },
           behaviors: [
             {
