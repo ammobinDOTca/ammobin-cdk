@@ -46,6 +46,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       url: CLIENT_URL, // had trouble during development
       environment: {
         NODE_ENV: 'production',
+        DONT_LOG_CONSOLE: 'true'
       },
       timeout: Duration.seconds(30),
     })
@@ -58,6 +59,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       environment: {
         TABLE_NAME: itemsTable.tableName,
         PRIMARY_KEY: 'id',
+        DONT_LOG_CONSOLE: 'true'
         //NODE_ENV: 'production', (nice to leave api playground open...)
       },
     })
@@ -97,6 +99,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       // memorySize: 1024,
       environment: {
         QueueUrl: workQueue.queueUrl,
+        DONT_LOG_CONSOLE: 'true'
       },
     })
     // todo: run this every so often cloudwatch schedule events
@@ -116,6 +119,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         TABLE_NAME: itemsTable.tableName,
         PRIMARY_KEY: 'id',
         USE_AWS_SERCRET: 'true',
+        DONT_LOG_CONSOLE: 'true'
       },
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))
