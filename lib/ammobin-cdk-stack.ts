@@ -28,11 +28,15 @@ export class AmmobinCdkStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: ASS) {
     super(scope, id, props)
     console.log(props)
+    const NODE_ENV = 'production'
+    const DONT_LOG_CONSOLE = 'true'
+    const PRIMARY_KEY = 'id'
+    const TABLE_NAME ='ammobinItems'
 
     const itemsTable = new dynamodb.Table(this, 'table', {
-      tableName: 'ammobinItems',
+      tableName: TABLE_NAME,
       partitionKey: {
-        name: 'id',
+        name: PRIMARY_KEY,
         type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
@@ -45,8 +49,8 @@ export class AmmobinCdkStack extends cdk.Stack {
       src: 'src/ammobin-client-built',
       url: CLIENT_URL, // had trouble during development
       environment: {
-        NODE_ENV: 'production',
-        DONT_LOG_CONSOLE: 'true'
+        NODE_ENV,
+        DONT_LOG_CONSOLE
       },
       timeout: Duration.seconds(30),
     })
@@ -57,22 +61,20 @@ export class AmmobinCdkStack extends cdk.Stack {
       src: 'src/ammobin-api',
       url: API_URL,
       environment: {
-        TABLE_NAME: itemsTable.tableName,
-        PRIMARY_KEY: 'id',
-        DONT_LOG_CONSOLE: 'true'
-        //NODE_ENV: 'production', (nice to leave api playground open...)
+        TABLE_NAME,
+        PRIMARY_KEY,
+        NODE_ENV,
+        DONT_LOG_CONSOLE
       },
     })
+
+
+
+
     // typescript bug?
     itemsTable.grantReadData(api.lambda)
-
-    // Content bucket
-    const siteBucket = new s3.Bucket(this, 'SiteBucket', {
-      websiteIndexDocument: 'index.html',
-      websiteErrorDocument: 'error.html',
-      publicReadAccess: true,
-    })
-    new cdk.CfnOutput(this, 'StaticBucket', { value: siteBucket.bucketName })
+    if (api.graphqlLambda)
+      itemsTable.grantReadData(api.graphqlLambda)
 
     // can even do cloudfront from ca-central-1?
     // may need to move this to global stack
@@ -99,7 +101,8 @@ export class AmmobinCdkStack extends cdk.Stack {
       // memorySize: 1024,
       environment: {
         QueueUrl: workQueue.queueUrl,
-        DONT_LOG_CONSOLE: 'true'
+        NODE_ENV,
+        DONT_LOG_CONSOLE
       },
     })
     // todo: run this every so often cloudwatch schedule events
@@ -116,10 +119,10 @@ export class AmmobinCdkStack extends cdk.Stack {
       timeout: Duration.minutes(3),
       memorySize: 1024,
       environment: {
-        TABLE_NAME: itemsTable.tableName,
-        PRIMARY_KEY: 'id',
-        USE_AWS_SERCRET: 'true',
-        DONT_LOG_CONSOLE: 'true'
+        TABLE_NAME,
+        PRIMARY_KEY,
+        NODE_ENV,
+        DONT_LOG_CONSOLE
       },
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))

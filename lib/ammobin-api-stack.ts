@@ -11,7 +11,7 @@ export class AmmobinApiStack extends cdk.Construct {
   code: lambda.AssetCode
   lambda: lambda.Function
   api: apigateway.RestApi
-
+  graphqlLambda?: lambda.Function
   constructor(
     scope: cdk.Construct,
     id: string,
@@ -52,8 +52,31 @@ export class AmmobinApiStack extends cdk.Construct {
     })
     api.domainName
     api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
-    const clientResource = api.root.addResource('{proxy+}')
-    clientResource.addMethod('ANY', new apigateway.LambdaIntegration(apiLambda))
+    const clientResource = api.root.addResource('api')
+
+    if (props.name.startsWith('api')) {
+      const NODE_ENV = 'production'
+      const DONT_LOG_CONSOLE = 'true'
+      const PRIMARY_KEY = 'id'
+      const TABLE_NAME = 'ammobinItems'
+      const graphqlLambda = new lambda.Function(this, 'graphql', {
+        code: new lambda.AssetCode('src/ammobin-api'),
+        handler: 'dist/api/graphql-lambda.handler',
+        runtime: lambda.Runtime.NODEJS_10_X,
+        timeout: Duration.seconds(30),
+        memorySize: 128,
+        environment: {
+          TABLE_NAME,
+          PRIMARY_KEY,
+          NODE_ENV,
+          DONT_LOG_CONSOLE
+        },
+      })
+      this.graphqlLambda = graphqlLambda
+      clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda))
+    }
+    clientResource.addResource('{proxy+}').addMethod('ANY', new apigateway.LambdaIntegration(apiLambda))
+
     this.code = apiCode
     this.lambda = apiLambda
     this.api = api

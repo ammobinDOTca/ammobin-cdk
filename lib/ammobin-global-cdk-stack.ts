@@ -107,7 +107,18 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 },
               ],
               isDefaultBehavior: true,
-              // pathPattern: '_nuxt/*',
+            },
+          ],
+        },
+        {
+          // save a few pennies by not running edge lambda for most of the static assets
+          s3OriginSource: {
+            s3BucketSource: siteBucket,
+            originAccessIdentityId: cfIdentityResource.ref
+          },
+          behaviors: [
+            {
+              pathPattern: '_nuxt/*',
             },
           ],
         },

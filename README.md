@@ -34,22 +34,30 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 ---
 
 todo params:
-stack region
 base domain
+(logging config?)
 
 todo
-api + dynamo
--> handles single subtype (will need to update UI)
--> split routes into multiple lambdas (will help on cold boots)
-log exporter
 
-s3 upload of generated nuxt (code build?)
+- fix nuxt generate to be able to serve old URLS (ie: / /about /centerfire)
+- log exporter
+  - post to self hosted fluentd?
+  - firehose post to self hosted fluetd?
+  - parse cloudwatch logs from home and send to fluent?
+- s3 upload of generated nuxt (code build?)
+  - code build (or use azure pipelines.....)
+  - need to re-generate every day
+- http security headers
+  - update re-router to include stuff from caddyfile
+- go back and fix v-if vs v-show for query params
 
-- sub route in s3 for different folders
+then put refresher on the schedule
 
 logging + metrics
 
 - export aws costing data? + graphs
+
+---
 
 blog post explaining all the mirgation stuff
 
