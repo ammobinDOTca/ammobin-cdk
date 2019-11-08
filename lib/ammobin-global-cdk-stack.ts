@@ -41,20 +41,32 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const nuxtRerouter = new lambda.Function(this, 'nuxtRerouter', {
       code: apiCode,
       handler: 'nuxt-rerouter.handler',
-      runtime: lambda.Runtime.NODEJS_8_10,
+      runtime: lambda.Runtime.NODEJS_10_X,
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
     }) //.addPermission()
 
+    const secruityHeaders = new lambda.Function(this, 'securityHeaders', {
+      code: apiCode,
+      handler: 'security-headers.handler',
+      runtime: lambda.Runtime.NODEJS_10_X,
+      environment: {},
+      timeout: Duration.seconds(3),
+      role: lambdaRole,
+    })
+
     new cdk.CfnOutput(this, 'nuxtRerouterArn', { value: nuxtRerouter.functionArn })
 
     // this way it updates version only in case lambda code changes
     // version has to start with a letter
-    const version = new lambda.Version(this, 'V' + sha256('edge-lambdas/nuxt-rerouter.ts'), {
+    const nuxtRerouterVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/nuxt-rerouter.ts'), {
       lambda: nuxtRerouter,
     })
-    this.nuxtRerouterVersion = version
+    const secruityHeadersVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/security-headers.ts'), {
+      lambda: secruityHeaders,
+    })
+    this.nuxtRerouterVersion = nuxtRerouterVersion
 
     const cfIdentityResource = new cloudfront.CfnCloudFrontOriginAccessIdentity(this, 'siteBucketAccess', {
       cloudFrontOriginAccessIdentityConfig: {
@@ -103,8 +115,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               lambdaFunctionAssociations: [
                 {
                   eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
-                  lambdaFunction: version,
+                  lambdaFunction: nuxtRerouterVersion,
                 },
+                {
+                  eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
+                  lambdaFunction: secruityHeadersVersion
+                }
               ],
               isDefaultBehavior: true,
             },
@@ -148,7 +164,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     // the main magic to easily pass the lambda version to stack in another region
     new cdk.CfnOutput(this, 'nuxtRerouterArnWithVersion', {
-      value: cdk.Fn.join(':', [nuxtRerouter.functionArn, version.version]),
+      value: cdk.Fn.join(':', [nuxtRerouter.functionArn, nuxtRerouterVersion.version]),
     })
   }
 }
