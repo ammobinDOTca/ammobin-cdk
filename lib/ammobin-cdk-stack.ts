@@ -1,17 +1,15 @@
 import lambda = require('@aws-cdk/aws-lambda')
-import apigateway = require('@aws-cdk/aws-apigateway')
 import cdk = require('@aws-cdk/core')
-import s3 = require('@aws-cdk/aws-s3')
-import cloudfront = require('@aws-cdk/aws-cloudfront')
-import acm = require('@aws-cdk/aws-certificatemanager')
 import dynamodb = require('@aws-cdk/aws-dynamodb')
 import sqs = require('@aws-cdk/aws-sqs')
 import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources'
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { API_URL, CLIENT_URL, PUBLIC_URL } from './constants'
+import { API_URL, CLIENT_URL } from './constants'
 import { Duration } from '@aws-cdk/core'
+import events = require('@aws-cdk/aws-events')
 
 import sm = require('@aws-cdk/aws-secretsmanager')
+import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 
 interface ASS extends cdk.StackProps {
   // edgeLambdaArn: string
@@ -31,7 +29,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const NODE_ENV = 'production'
     const DONT_LOG_CONSOLE = 'true'
     const PRIMARY_KEY = 'id'
-    const TABLE_NAME ='ammobinItems'
+    const TABLE_NAME = 'ammobinItems'
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: TABLE_NAME,
@@ -76,10 +74,6 @@ export class AmmobinCdkStack extends cdk.Stack {
     if (api.graphqlLambda)
       itemsTable.grantReadData(api.graphqlLambda)
 
-    // can even do cloudfront from ca-central-1?
-    // may need to move this to global stack
-    // and pass it the urls of the ca-central-1 stuff?
-
     // TODO: manually update this key: https://ca-central-1.console.aws.amazon.com/secretsmanager/home?region=ca-central-1#/secret?name=rendertronUrl
     //https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_update-secret.html
     // note: not used currently b/c using internal pupeteer
@@ -105,7 +99,18 @@ export class AmmobinCdkStack extends cdk.Stack {
         DONT_LOG_CONSOLE
       },
     })
-    // todo: run this every so often cloudwatch schedule events
+
+    // refresh once a day
+    const refreshCron = new events.Rule(this, 'referesher', {
+      description: 'refresh prices in dynamo',
+      schedule: events.Schedule.cron({
+        hour: '0',
+        minute: '1',
+      }),
+      enabled: false // todo: re-enable once ready to go to prod
+    })
+    refresherLambda.addEventSource(new CloudwatchScheduleEvent(refreshCron))
+
 
     workQueue.grantSendMessages(refresherLambda)
     //todo: future opt -> 2 lambdas, high memeory and low memory...
