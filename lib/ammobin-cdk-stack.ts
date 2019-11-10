@@ -30,6 +30,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const DONT_LOG_CONSOLE = 'true'
     const PRIMARY_KEY = 'id'
     const TABLE_NAME = 'ammobinItems'
+    const HASH_SECRET = 'TODO-REAL-SECRET' //
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: TABLE_NAME,
@@ -62,7 +63,8 @@ export class AmmobinCdkStack extends cdk.Stack {
         TABLE_NAME,
         PRIMARY_KEY,
         NODE_ENV,
-        DONT_LOG_CONSOLE
+        DONT_LOG_CONSOLE,
+        HASH_SECRET
       },
     })
 
