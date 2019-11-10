@@ -64,7 +64,7 @@ export class AmmobinApiStack extends cdk.Construct {
         handler: 'dist/api/graphql-lambda.handler',
         runtime: lambda.Runtime.NODEJS_10_X,
         timeout: Duration.seconds(30),
-        memorySize: 128,
+        memorySize: 192,
         environment: {
           TABLE_NAME,
           PRIMARY_KEY,
