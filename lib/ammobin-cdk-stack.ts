@@ -7,7 +7,7 @@ import { AmmobinApiStack } from './ammobin-api-stack'
 import { API_URL, CLIENT_URL } from './constants'
 import { Duration } from '@aws-cdk/core'
 import events = require('@aws-cdk/aws-events')
-
+import iam = require('@aws-cdk/aws-iam')
 import sm = require('@aws-cdk/aws-secretsmanager')
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 
@@ -136,6 +136,36 @@ export class AmmobinCdkStack extends cdk.Stack {
     itemsTable.grantWriteData(workerLambda)
     workQueue.grantConsumeMessages(workerLambda)
 
-    //QueueUrl
+    // https://grafana.com/docs/features/datasources/cloudwatch/
+    const grafanaIAMUser = new iam.User(this, 'grafana', {})
+    grafanaIAMUser.addToPolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        "cloudwatch:DescribeAlarmsForMetric",
+        "cloudwatch:ListMetrics",
+        "cloudwatch:GetMetricStatistics",
+        "cloudwatch:GetMetricData"
+      ],
+      resources: ['*']
+    }))
+
+    grafanaIAMUser.addToPolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        "ec2:DescribeTags",
+        "ec2:DescribeInstances",
+        "ec2:DescribeRegions"
+      ],
+      resources: ['*']
+    }))
+
+    grafanaIAMUser.addToPolicy(new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        "tag:GetResources"
+      ],
+      resources: ['*']
+    }))
+
   }
 }
