@@ -1,5 +1,5 @@
 import { CloudFrontResponseEvent, Context, Callback } from 'aws-lambda'
-// add some security headers to our page responses
+// add some security headers to our page responses + custom cache header
 // values taken from caddyfile in ammobin-compose
 export function handler(event: CloudFrontResponseEvent, context: Context, cb: Callback) {
   const response = event.Records[0].cf.response
@@ -19,6 +19,15 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
     }],
     'referrer-policy': [{ key: 'Referrer-policy', value: 'origin' }],
     ...response.headers
+  }
+
+  // set custom cache age for generated html pages (want to only cache for upto 24hrs until we regen ht page)
+  // nuxt-rerouter should append .html for the pages that need it for finding the page in s3
+  if (event.Records[0].cf.request.uri.endsWith('.html')) {
+    response.headers['cache-control'] = [{
+      key: 'Cache-Control',
+      value: 'max-age=1' // todo: calculate this from how much time till page is regenerated
+    }]
   }
 
   cb(null, response)

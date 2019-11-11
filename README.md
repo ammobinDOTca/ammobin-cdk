@@ -35,27 +35,20 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 
 todo params:
 base domain
-(logging config?)
 
 todo
 
-- fix nuxt generate to be able to serve old URLS (ie: / /about /centerfire)
-- log exporter
-  - post to self hosted fluentd?
-  - firehose post to self hosted fluetd?
-  - parse cloudwatch logs from home and send to fluent?
 - s3 upload of generated nuxt (code build?)
   - code build (or use azure pipelines.....)
-  - need to re-generate every day
-- http security headers
-  - update re-router to include stuff from caddyfile
-- go back and fix v-if vs v-show for query params
-
-then put refresher on the schedule
+  - need to re-generate every day (after refreshing pricing)
 
 logging + metrics
 
+- set up custom metrics on cloudwatch
+  - need this for api metrics...
 - export aws costing data? + graphs
+
+then put refresher on the schedule
 
 ---
 

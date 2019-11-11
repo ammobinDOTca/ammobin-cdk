@@ -27,7 +27,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     super(scope, id, props)
     console.log(props)
     const NODE_ENV = 'production'
-    const DONT_LOG_CONSOLE = 'true'
+    const DONT_LOG_CONSOLE = 'false'
     const PRIMARY_KEY = 'id'
     const TABLE_NAME = 'ammobinItems'
     const HASH_SECRET = 'TODO-REAL-SECRET' //
@@ -73,8 +73,9 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     // typescript bug?
     itemsTable.grantReadData(api.lambda)
-    if (api.graphqlLambda)
+    if (api.graphqlLambda) {
       itemsTable.grantReadData(api.graphqlLambda)
+    }
 
     // TODO: manually update this key: https://ca-central-1.console.aws.amazon.com/secretsmanager/home?region=ca-central-1#/secret?name=rendertronUrl
     //https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_update-secret.html

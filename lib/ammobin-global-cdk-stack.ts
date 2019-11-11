@@ -123,6 +123,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 }
               ],
               isDefaultBehavior: true,
+              defaultTtl: Duration.days(365)
             },
           ],
         },
@@ -135,6 +136,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           behaviors: [
             {
               pathPattern: '_nuxt/*',
+              defaultTtl: Duration.days(365)
             },
           ],
         },
@@ -147,7 +149,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             {
               isDefaultBehavior: false,
               pathPattern: 'api/*',
-              allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
+              allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL
             },
           ],
         },
