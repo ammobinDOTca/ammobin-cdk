@@ -2,7 +2,7 @@ import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import lambda = require('@aws-cdk/aws-lambda')
 import iam = require('@aws-cdk/aws-iam')
-import { PUBLIC_URL, API_URL } from './constants'
+import { PUBLIC_URL, API_URL, LOG_RETENTION } from './constants'
 import { Duration } from '@aws-cdk/core'
 import apigateway = require('@aws-cdk/aws-apigateway')
 
@@ -45,6 +45,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
+      logRetention: LOG_RETENTION
     }) //.addPermission()
 
     const secruityHeaders = new lambda.Function(this, 'securityHeaders', {
@@ -54,6 +55,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
+      logRetention: LOG_RETENTION
     })
 
     new cdk.CfnOutput(this, 'nuxtRerouterArn', { value: nuxtRerouter.functionArn })

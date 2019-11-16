@@ -2,14 +2,16 @@ import lambda = require('@aws-cdk/aws-lambda')
 import cdk = require('@aws-cdk/core')
 import dynamodb = require('@aws-cdk/aws-dynamodb')
 import sqs = require('@aws-cdk/aws-sqs')
-import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources'
+import { SqsEventSource, StreamEventSource } from '@aws-cdk/aws-lambda-event-sources'
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { API_URL, CLIENT_URL } from './constants'
+import { API_URL, CLIENT_URL, LOG_RETENTION } from './constants'
 import { Duration } from '@aws-cdk/core'
 import events = require('@aws-cdk/aws-events')
 import iam = require('@aws-cdk/aws-iam')
 import sm = require('@aws-cdk/aws-secretsmanager')
+import * as CloudWatch from '@aws-cdk/aws-cloudwatch'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
+import { RetentionDays } from '@aws-cdk/aws-logs'
 
 interface ASS extends cdk.StackProps {
   // edgeLambdaArn: string
@@ -68,10 +70,6 @@ export class AmmobinCdkStack extends cdk.Stack {
       },
     })
 
-
-
-
-    // typescript bug?
     itemsTable.grantReadData(api.lambda)
     if (api.graphqlLambda) {
       itemsTable.grantReadData(api.graphqlLambda)
@@ -101,6 +99,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         NODE_ENV,
         DONT_LOG_CONSOLE
       },
+      logRetention: RetentionDays.ONE_MONTH
     })
 
     // refresh once a day
@@ -132,6 +131,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         NODE_ENV,
         DONT_LOG_CONSOLE
       },
+      logRetention: LOG_RETENTION
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))
 

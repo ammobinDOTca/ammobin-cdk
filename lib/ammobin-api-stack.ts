@@ -5,6 +5,7 @@ import s3 = require('@aws-cdk/aws-s3')
 import cloudfront = require('@aws-cdk/aws-cloudfront')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import { Duration } from '@aws-cdk/core'
+import { LOG_RETENTION } from './constants'
 
 export class AmmobinApiStack extends cdk.Construct {
   // shit we expose
@@ -33,6 +34,7 @@ export class AmmobinApiStack extends cdk.Construct {
       runtime: lambda.Runtime.NODEJS_10_X,
       environment: props.environment,
       timeout: props.timeout || Duration.seconds(3),
+      logRetention: LOG_RETENTION
     })
 
     const api = new apigateway.RestApi(this, props.name + 'AGW', {
@@ -71,6 +73,7 @@ export class AmmobinApiStack extends cdk.Construct {
           NODE_ENV,
           DONT_LOG_CONSOLE
         },
+        logRetention: LOG_RETENTION
       })
       this.graphqlLambda = graphqlLambda
       clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda))
