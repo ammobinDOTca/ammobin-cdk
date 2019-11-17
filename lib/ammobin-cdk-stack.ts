@@ -2,17 +2,17 @@ import lambda = require('@aws-cdk/aws-lambda')
 import cdk = require('@aws-cdk/core')
 import dynamodb = require('@aws-cdk/aws-dynamodb')
 import sqs = require('@aws-cdk/aws-sqs')
-import { SqsEventSource, StreamEventSource } from '@aws-cdk/aws-lambda-event-sources'
+import { SqsEventSource } from '@aws-cdk/aws-lambda-event-sources'
 import { AmmobinApiStack } from './ammobin-api-stack'
 import { API_URL, CLIENT_URL, LOG_RETENTION } from './constants'
 import { Duration } from '@aws-cdk/core'
 import events = require('@aws-cdk/aws-events')
 import iam = require('@aws-cdk/aws-iam')
 import sm = require('@aws-cdk/aws-secretsmanager')
-import * as CloudWatch from '@aws-cdk/aws-cloudwatch'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { RetentionDays } from '@aws-cdk/aws-logs'
-
+import * as kinesis from '@aws-cdk/aws-kinesis'
+import { exportLambdaLogsToKinesis } from './helper'
 interface ASS extends cdk.StackProps {
   // edgeLambdaArn: string
   // edgeLamda: lambda.Function
@@ -102,6 +102,9 @@ export class AmmobinCdkStack extends cdk.Stack {
       logRetention: RetentionDays.ONE_MONTH
     })
 
+
+
+
     // refresh once a day
     const refreshCron = new events.Rule(this, 'referesher', {
       description: 'refresh prices in dynamo',
@@ -122,7 +125,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const workerLambda = new lambda.Function(this, 'worker', {
       code: workerLamdbaCode,
       handler: 'dist/worker/lambda.handler',
-      runtime: lambda.Runtime.NODEJS_8_10, // as per https://github.com/alixaxel/chrome-aws-lambda
+      runtime: lambda.Runtime.NODEJS_10_X, // as per https://github.com/alixaxel/chrome-aws-lambda
       timeout: Duration.minutes(3),
       memorySize: 1024,
       environment: {
@@ -131,13 +134,26 @@ export class AmmobinCdkStack extends cdk.Stack {
         NODE_ENV,
         DONT_LOG_CONSOLE
       },
-      logRetention: LOG_RETENTION
+      logRetention: LOG_RETENTION,
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))
 
     rendertronUrl.grantRead(workerLambda)
     itemsTable.grantWriteData(workerLambda)
     workQueue.grantConsumeMessages(workerLambda)
+
+
+    const logPipe = new kinesis.Stream(this, 'logPipe', {
+      retentionPeriodHours: 24, // smallest amount
+      shardCount: 1,
+      encryption: kinesis.StreamEncryption.KMS
+    });
+    [
+      workerLambda,
+      refresherLambda,
+      api.lambda,
+      api.graphqlLambda as any
+    ].forEach(l => exportLambdaLogsToKinesis(this, l, logPipe))
 
     // https://grafana.com/docs/features/datasources/cloudwatch/
     const grafanaIAMUser = new iam.User(this, 'grafana', {})
