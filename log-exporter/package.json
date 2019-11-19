@@ -1,0 +1,15 @@
+{
+  "name": "log-exporter",
+  "version": "1.0.0",
+  "description": "lambda triggered by kinesis to send logs to elasticsearch",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "nexus-uw",
+  "license": "MIT",
+  "dependencies": {
+    "winston": "^3.2.1",
+    "winston-elasticsearch": "^0.8.2"
+  }
+}
