@@ -107,6 +107,24 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         names: [PUBLIC_URL],
         securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
       },
+      enableIpV6: true,
+      comment: 'main domain for ammobin, hosts both assets and api',
+      httpVersion: cloudfront.HttpVersion.HTTP2,
+      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+      errorConfigurations: [
+        {
+          errorCode: 403,
+          responseCode: 403,
+          responsePagePath: '/200.html',
+          errorCachingMinTtl: 60 * 5 // 5mins
+        },
+        {
+          errorCode: 404,
+          responseCode: 404,
+          responsePagePath: '/200.html',
+          errorCachingMinTtl: 60 * 30 // 30mins
+        }
+      ],
       originConfigs: [
         {
           s3OriginSource: {
@@ -126,7 +144,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 }
               ],
               isDefaultBehavior: true,
-              defaultTtl: Duration.days(365)
+              defaultTtl: Duration.days(365),
+              minTtl: Duration.days(1), // want to make sure that updated pages get sent (refreshing once a day now)
             },
           ],
         },
@@ -139,7 +158,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           behaviors: [
             {
               pathPattern: '_nuxt/*',
-              defaultTtl: Duration.days(365)
+              defaultTtl: Duration.days(365),
+              minTtl: Duration.days(365),
             },
           ],
         },
@@ -152,7 +172,9 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             {
               isDefaultBehavior: false,
               pathPattern: 'api/*',
-              allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL
+              allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
+              defaultTtl: Duration.days(365),
+              minTtl: Duration.days(1), // incase we ever move to GETs for graphql requests....
             },
           ],
         },
