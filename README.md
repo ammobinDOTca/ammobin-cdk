@@ -15,6 +15,10 @@
    -> copy down acm dns validation check
    -> set up cname from client.aws.ammobin.ca to 'Target Domain Name' from custom domains tab on api gateway. set a short TTL on it (for easier turn around time debugging if things go wrong)
 
+npm run build && cdk deploy AmmobinCdkStack
+npm run build && cdk deploy AmmobinGlobalCdkStack
+npm run build && cdk deploy GrafanaIamStack (optional)
+
 ---
 
 # issues
