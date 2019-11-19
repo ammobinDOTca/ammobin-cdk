@@ -2,6 +2,7 @@
 import cdk = require('@aws-cdk/core')
 import { AmmobinCdkStack } from '../lib/ammobin-cdk-stack'
 import { AmmobinGlobalCdkStack } from '../lib/ammobin-global-cdk-stack'
+import { GrafanaIamStack } from '../lib/grafana-iam-stack'
 
 const app = new cdk.App()
 
@@ -18,3 +19,9 @@ new AmmobinCdkStack(app, 'AmmobinCdkStack', {
     region: 'ca-central-1',
   },
 }) //.addDependency(globalAmmo)
+
+new GrafanaIamStack(app, 'GrafanaIamStack', {
+  env: {
+    region: 'ca-central-1',
+  },
+})

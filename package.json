@@ -5,7 +5,7 @@
     "ammobin-cdk": "dist/bin/ammobin-cdk.js"
   },
   "scripts": {
-    "build": "tsc --outDir dist",
+    "build": "tsc --outDir dist && cp -r log-exporter/node_modules dist/log-exporter/node_modules",
     "watch": "tsc -w",
     "cdk": "cdk"
   },
@@ -14,6 +14,7 @@
     "@aws-cdk/aws-logs-destinations": "^1.16.3",
     "@aws-cdk/aws-s3": "^1.16.3",
     "@types/aws-lambda": "^8.10.36",
+    "@types/node": "^12.12.8",
     "aws-cdk": "^1.16.3",
     "sha256-file": "^1.0.0",
     "ts-node": "^8.5.2",

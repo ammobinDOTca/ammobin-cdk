@@ -45,7 +45,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
-      logRetention: LOG_RETENTION
+      logRetention: LOG_RETENTION,
+      description: ''
     }) //.addPermission()
 
     const secruityHeaders = new lambda.Function(this, 'securityHeaders', {
