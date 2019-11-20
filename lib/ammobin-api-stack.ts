@@ -62,7 +62,7 @@ export class AmmobinApiStack extends cdk.Construct {
       const PRIMARY_KEY = 'id'
       const TABLE_NAME = 'ammobinItems'
       const graphqlLambda = new lambda.Function(this, 'graphql', {
-        code: new lambda.AssetCode('./src/ammobin-api'),
+        code: apiCode,
         handler: 'dist/api/graphql-lambda.handler',
         runtime: lambda.Runtime.NODEJS_10_X,
         timeout: Duration.seconds(30),

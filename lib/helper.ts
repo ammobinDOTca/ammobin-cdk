@@ -2,8 +2,6 @@ import { LambdaDestination } from "@aws-cdk/aws-logs-destinations"
 import * as CloudWatchLogs from '@aws-cdk/aws-logs'
 import cdk = require('@aws-cdk/core')
 import Lambda = require('@aws-cdk/aws-lambda')
-import * as Kinesis from '@aws-cdk/aws-kinesis'
-import { LogGroup } from "@aws-cdk/aws-logs"
 import * as iam from '@aws-cdk/aws-iam'
 /**
  * generic export all json log messages to lambda (will forward to)
@@ -28,7 +26,7 @@ export function exportLambdaLogsToLogger(stack: cdk.Stack, lambda: Lambda.Functi
   lambda.grantInvoke(f)
   logGroup.addSubscriptionFilter('getAllJson' + lambda.node.uniqueId, {
     filterPattern: {
-      logPatternString: '{$.message = *}'
+      logPatternString: '{$.level = "info"}' // all logs should be at this level (want all json logs, no need to export lambda cruff)
     },
     destination: new LambdaDestination(logLambda)
   })

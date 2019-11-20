@@ -59,7 +59,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const api = new AmmobinApiStack(this, 'ammobin-api', {
       handler: 'dist/api/lambda.handler',
       name: 'apiLambda',
-      src: './src/ammobin-api',
+      src: '../ammobin-api',
       url: API_URL,
       environment: {
         TABLE_NAME,
@@ -86,8 +86,8 @@ export class AmmobinCdkStack extends cdk.Stack {
     const workQueue = new sqs.Queue(this, 'workQueue', {
       visibilityTimeout: Duration.minutes(3), // same as worker
     })
-
-    const apiCode = new lambda.AssetCode('./src/ammobin-api')
+    // keep outside of this dir, had issues with symlinks breaking the upload...
+    const apiCode = new lambda.AssetCode('../ammobin-api')
     const refresherLambda = new lambda.Function(this, 'refresher', {
       code: apiCode,
       handler: 'dist/refresher/lambda.handler',
@@ -152,7 +152,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       code: new lambda.AssetCode('./dist/log-exporter'),
       handler: 'elasticsearch.handler',
       runtime: lambda.Runtime.NODEJS_10_X, // as per https://github.com/alixaxel/chrome-aws-lambda
-      timeout: Duration.seconds(30),
+      timeout: Duration.minutes(5),
       memorySize: 128,
       environment: {
         NODE_ENV,
@@ -168,10 +168,9 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     [
       workerLambda,
-      // TODO: uncomment once https://github.com/aws/aws-cdk/pull/4975 is released to npm
-      // refresherLambda,
-      // api.lambda,
-      // api.graphqlLambda as any
+      refresherLambda,
+      api.lambda,
+      api.graphqlLambda as any
     ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
 
 
