@@ -22,7 +22,7 @@ export class s3UploadStack extends cdk.Stack {
       actions: [
         "s3:PutObject"
       ],
-      resources: [props.bucketArn || '*']
+      resources: [props.bucketArn + '/*' || '*']
     }))
   }
 }
