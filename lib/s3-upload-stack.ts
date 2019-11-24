@@ -24,5 +24,7 @@ export class s3UploadStack extends cdk.Stack {
       ],
       resources: [props.bucketArn + '/*' || '*']
     }))
+
+    // todo: use code build once azure wants money for pipelines
   }
 }

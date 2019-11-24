@@ -49,7 +49,11 @@ export class AmmobinApiStack extends cdk.Construct {
         endpointType: apigateway.EndpointType.REGIONAL,
         domainName: props.url,
       },
-
+      defaultCorsPreflightOptions: {
+        maxAge: Duration.days(999),
+        allowCredentials: false,
+        allowOrigins: ['*']
+      },
       deployOptions: { stageName: 'api' }, // to match with cloudfront path pattern ;)
     })
     api.domainName
@@ -57,22 +61,13 @@ export class AmmobinApiStack extends cdk.Construct {
     const clientResource = api.root.addResource('api')
 
     if (props.name.startsWith('api')) {
-      const NODE_ENV = 'production'
-      const DONT_LOG_CONSOLE = 'false'
-      const PRIMARY_KEY = 'id'
-      const TABLE_NAME = 'ammobinItems'
       const graphqlLambda = new lambda.Function(this, 'graphql', {
         code: apiCode,
         handler: 'dist/api/graphql-lambda.handler',
         runtime: lambda.Runtime.NODEJS_10_X,
         timeout: Duration.seconds(30),
         memorySize: 192,
-        environment: {
-          TABLE_NAME,
-          PRIMARY_KEY,
-          NODE_ENV,
-          DONT_LOG_CONSOLE
-        },
+        environment: props.environment,
         logRetention: LOG_RETENTION
       })
       this.graphqlLambda = graphqlLambda

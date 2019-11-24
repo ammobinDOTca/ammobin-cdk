@@ -27,7 +27,7 @@ export class AmmobinCdkStack extends cdk.Stack {
   // todo: type props
   constructor(scope: cdk.App, id: string, props: ASS) {
     super(scope, id, props)
-    console.log(props)
+
     const NODE_ENV = 'production'
     const DONT_LOG_CONSOLE = 'false'
     const PRIMARY_KEY = 'id'
@@ -106,11 +106,11 @@ export class AmmobinCdkStack extends cdk.Stack {
 
 
 
-    // refresh once a day
+    // refresh once a day (UTC)
     const refreshCron = new events.Rule(this, 'referesher', {
       description: 'refresh all prices in dynamo',
       schedule: events.Schedule.cron({
-        hour: '0',
+        hour: '8',
         minute: '1',
       }),
       enabled: false // todo: re-enable once ready to go to prod
