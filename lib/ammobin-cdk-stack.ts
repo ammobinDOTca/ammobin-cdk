@@ -113,7 +113,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         hour: '8',
         minute: '1',
       }),
-      enabled: false // todo: re-enable once ready to go to prod
+      enabled: true // todo: re-enable once ready to go to prod
     })
     refresherLambda.addEventSource(new CloudwatchScheduleEvent(refreshCron))
 
