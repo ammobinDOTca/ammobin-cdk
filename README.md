@@ -2,7 +2,7 @@
 
 ammobin.ca rebuilt on AWS serverless technologies using AWS-CDK
 
-![](https://raw.githubusercontent.com/ammobinDOTca/ammobin-cdk/master/aws ammobin.ca cdk.png)
+![](https://raw.githubusercontent.com/ammobinDOTca/ammobin-cdk/master/aws%20ammobin.ca%20cdk.png)
 
 # setup
 
