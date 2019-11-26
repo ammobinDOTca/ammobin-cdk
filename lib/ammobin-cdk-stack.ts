@@ -103,9 +103,6 @@ export class AmmobinCdkStack extends cdk.Stack {
       description: 'invoked by cloudwatch scheduled event to trigger all the of the scrape tasks'
     })
 
-
-
-
     // refresh once a day (UTC)
     const refreshCron = new events.Rule(this, 'referesher', {
       description: 'refresh all prices in dynamo',
@@ -113,7 +110,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         hour: '8',
         minute: '1',
       }),
-      enabled: true // todo: re-enable once ready to go to prod
+      enabled: false // todo: re-enable once ready to go to prod
     })
     refresherLambda.addEventSource(new CloudwatchScheduleEvent(refreshCron))
 
