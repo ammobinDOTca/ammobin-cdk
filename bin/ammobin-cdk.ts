@@ -7,29 +7,37 @@ import { s3UploadStack } from '../lib/s3-upload-stack'
 
 const app = new cdk.App()
 
-const globalAmmo = new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
+// read in some props from environment vars
+const {
+  siteBucket = 'ammobin-aws-site', // s3 bucket where static assets are uploaded to. this will need to be changed for each setup, bucket names are unique across AWS
+  region = 'ca-central-1', // default to canada region
+  publicUrl = 'aws.ammobin.ca' // current base domain of site
+} = process.env
+
+new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   env: {
-    region: 'us-east-1',
+    region: 'us-east-1', // cloudfront must use stuff here
   },
+  publicUrl,
+  siteBucket
 })
 
 new AmmobinCdkStack(app, 'AmmobinCdkStack', {
-  // edgeLamdaVersion: globalAmmo.nuxtRerouterVersion.version,
-  // edgeLamdaArn: globalAmmo.nuxtRerouterVersion.functionArn,
   env: {
-    region: 'ca-central-1',
+    region,
   },
-}) //.addDependency(globalAmmo)
+  publicUrl
+})
 
 new GrafanaIamStack(app, 'GrafanaIamStack', {
   env: {
-    region: 'ca-central-1',
+    region,
   },
 })
 
 new s3UploadStack(app, 's3UploadStack', {
-  bucketArn: 'arn:aws:s3:::ammobin-aws-site',
+  bucketArn: 'arn:aws:s3:::' + siteBucket, // this comes from output of AmmobinGlobalCdkStack
   env: {
-    region: 'ca-central-1',
+    region,
   },
 })

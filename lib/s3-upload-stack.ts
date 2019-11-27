@@ -3,7 +3,7 @@ import iam = require('@aws-cdk/aws-iam')
 interface Props extends cdk.StackProps {
   /**
    * ARN of bucket to grant putObject
-   * if ommitted, grant to all buckets
+   * if omitted, grant to all buckets
    */
   bucketArn?: string
 }
@@ -25,6 +25,6 @@ export class s3UploadStack extends cdk.Stack {
       resources: [props.bucketArn + '/*' || '*']
     }))
 
-    // todo: use code build once azure wants money for pipelines
+    // todo: use code build once azure wants money for pipelines?
   }
 }

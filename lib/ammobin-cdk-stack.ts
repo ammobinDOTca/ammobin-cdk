@@ -4,7 +4,7 @@ import dynamodb = require('@aws-cdk/aws-dynamodb')
 import sqs = require('@aws-cdk/aws-sqs')
 import { SqsEventSource, KinesisEventSource, StreamEventSource } from '@aws-cdk/aws-lambda-event-sources'
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { API_URL, CLIENT_URL, LOG_RETENTION } from './constants'
+import { LOG_RETENTION } from './constants'
 import { Duration } from '@aws-cdk/core'
 import events = require('@aws-cdk/aws-events')
 import sm = require('@aws-cdk/aws-secretsmanager')
@@ -13,19 +13,14 @@ import { RetentionDays } from '@aws-cdk/aws-logs'
 import * as kinesis from '@aws-cdk/aws-kinesis'
 import { exportLambdaLogsToLogger } from './helper'
 import { Secret } from '@aws-cdk/aws-secretsmanager'
-interface ASS extends cdk.StackProps {
-  // edgeLambdaArn: string
-  // edgeLamda: lambda.Function
-  // edgeLamdaVersion: string //lambda.IVersion
-  // edgeLamdaArn: string
+
+interface IAmmobinCdkStackProps extends cdk.StackProps {
+  publicUrl: string
 }
 
 export class AmmobinCdkStack extends cdk.Stack {
-  // edgeLambdaArn: string
-  // edgeLamda: lambda.Function
-  // edgeLamdaVersion: lambda.IVersion
-  // todo: type props
-  constructor(scope: cdk.App, id: string, props: ASS) {
+
+  constructor(scope: cdk.App, id: string, props: IAmmobinCdkStackProps) {
     super(scope, id, props)
 
     const NODE_ENV = 'production'
@@ -60,7 +55,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       handler: 'dist/api/lambda.handler',
       name: 'apiLambda',
       src: '../ammobin-api',
-      url: API_URL,
+      url: 'api.' + props.publicUrl,
       environment: {
         TABLE_NAME,
         PRIMARY_KEY,
@@ -116,9 +111,8 @@ export class AmmobinCdkStack extends cdk.Stack {
 
 
     workQueue.grantSendMessages(refresherLambda)
-    //todo: future opt -> 2 lambdas, high memeory and low memory...
+    //todo: future opt -> 2 lambdas, high memory and low memory...
     // with 2 sqs queues
-    // question, why not sns with X cloudwatch
     const workerLambda = new lambda.Function(this, 'worker', {
       code: apiCode,
       handler: 'dist/worker/lambda.handler',
@@ -148,7 +142,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const logExporter = new lambda.Function(this, 'logExporter', {
       code: new lambda.AssetCode('./dist/log-exporter'),
       handler: 'elasticsearch.handler',
-      runtime: lambda.Runtime.NODEJS_10_X, // as per https://github.com/alixaxel/chrome-aws-lambda
+      runtime: lambda.Runtime.NODEJS_10_X,
       timeout: Duration.minutes(5),
       memorySize: 128,
       environment: {

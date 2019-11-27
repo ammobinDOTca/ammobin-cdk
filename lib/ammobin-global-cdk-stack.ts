@@ -2,26 +2,29 @@ import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import lambda = require('@aws-cdk/aws-lambda')
 import iam = require('@aws-cdk/aws-iam')
-import { PUBLIC_URL, API_URL, LOG_RETENTION } from './constants'
+import { LOG_RETENTION } from './constants'
 import { Duration } from '@aws-cdk/core'
-import apigateway = require('@aws-cdk/aws-apigateway')
 
 import s3 = require('@aws-cdk/aws-s3')
 import cloudfront = require('@aws-cdk/aws-cloudfront')
-import s3deploy = require('@aws-cdk/aws-s3-deployment')
 import sha256 = require('sha256-file')
 import { PolicyStatement, CanonicalUserPrincipal } from '@aws-cdk/aws-iam'
+
+interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
+  publicUrl: string,
+  siteBucket: string
+}
 
 export class AmmobinGlobalCdkStack extends cdk.Stack {
   cert: acm.Certificate
   nuxtRerouter: lambda.Function
   nuxtRerouterVersion: lambda.Version
 
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+  constructor(scope: cdk.App, id: string, props: IAmmobinGlobalCdkStackProps) {
     super(scope, id, props)
 
     this.cert = new acm.Certificate(this, 'RootGlobalCert', {
-      domainName: PUBLIC_URL,
+      domainName: props.publicUrl,
       validationMethod: acm.ValidationMethod.DNS,
     })
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
@@ -49,7 +52,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       description: ''
     }) //.addPermission()
 
-    const secruityHeaders = new lambda.Function(this, 'securityHeaders', {
+    const securityHeaders = new lambda.Function(this, 'securityHeaders', {
       code: apiCode,
       handler: 'security-headers.handler',
       runtime: lambda.Runtime.NODEJS_10_X,
@@ -66,8 +69,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const nuxtRerouterVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/nuxt-rerouter.ts'), {
       lambda: nuxtRerouter,
     })
-    const secruityHeadersVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/security-headers.ts'), {
-      lambda: secruityHeaders,
+    const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/security-headers.ts'), {
+      lambda: securityHeaders,
     })
     this.nuxtRerouterVersion = nuxtRerouterVersion
 
@@ -79,10 +82,10 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
-      bucketName: 'ammobin-aws-site', // todo: this needs to be set by cdk for this stack to be deployed more than once
+      bucketName: props.siteBucket,
       publicReadAccess: false,
     })
-    new cdk.CfnOutput(this, 'Bucket', { value: siteBucket.bucketName })
+    new cdk.CfnOutput(this, 'siteBucket', { value: siteBucket.bucketName })
 
     new s3.BucketPolicy(this, "BucketPolicy", {
       bucket: siteBucket,
@@ -97,7 +100,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         // from output of ammobin global cdk stack in us-east-1...
         // todo: make this cleaner + other people can use
         acmCertRef: this.cert.certificateArn,
-        names: [PUBLIC_URL],
+        names: [props.publicUrl],
         securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_1_2016,
       },
       enableIpV6: true,
@@ -133,7 +136,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 },
                 {
                   eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-                  lambdaFunction: secruityHeadersVersion
+                  lambdaFunction: securityHeadersVersion
                 }
               ],
               isDefaultBehavior: true,
@@ -159,13 +162,14 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         // route api requests to the api lambda + gateway
         {
           customOriginSource: {
-            domainName: API_URL,
+            domainName: 'api.' + props.publicUrl
           },
           behaviors: [
             {
               isDefaultBehavior: false,
               pathPattern: 'api/*',
               allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
+              cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
               defaultTtl: Duration.days(365),
               minTtl: Duration.days(1), // incase we ever move to GETs for graphql requests....
             },
@@ -173,12 +177,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         },
       ],
     })
-    // new s3deploy.BucketDeployment(this, 'DeployWithInvalidation', {
-    //   sources: [s3deploy.Source.asset('./site-contents')],
-    //   destinationBucket: siteBucket,
-    //   distribution,
-    //   // distributionPaths: ['/*'],
-    // })
+
 
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId })
 
