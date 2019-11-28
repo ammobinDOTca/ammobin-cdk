@@ -31,7 +31,7 @@ export class AmmobinApiStack extends cdk.Construct {
     const apiLambda = new lambda.Function(this, props.name + 'Lambda', {
       code: apiCode,
       handler: props.handler,
-      runtime: lambda.Runtime.NODEJS_10_X,
+      runtime: lambda.Runtime.NODEJS_12_X,
       environment: props.environment,
       timeout: props.timeout || Duration.seconds(3),
       logRetention: LOG_RETENTION
@@ -64,7 +64,7 @@ export class AmmobinApiStack extends cdk.Construct {
       const graphqlLambda = new lambda.Function(this, 'graphql', {
         code: apiCode,
         handler: 'dist/api/graphql-lambda.handler',
-        runtime: lambda.Runtime.NODEJS_10_X,
+        runtime: lambda.Runtime.NODEJS_12_X,
         timeout: Duration.seconds(30),
         memorySize: 192,
         environment: props.environment,

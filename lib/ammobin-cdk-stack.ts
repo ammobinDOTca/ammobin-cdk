@@ -86,7 +86,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const refresherLambda = new lambda.Function(this, 'refresher', {
       code: apiCode,
       handler: 'dist/refresher/lambda.handler',
-      runtime: lambda.Runtime.NODEJS_10_X,
+      runtime: lambda.Runtime.NODEJS_12_X,
       timeout: Duration.minutes(3),
       // memorySize: 1024,
       environment: {
@@ -116,7 +116,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const workerLambda = new lambda.Function(this, 'worker', {
       code: apiCode,
       handler: 'dist/worker/lambda.handler',
-      runtime: lambda.Runtime.NODEJS_10_X, // as per https://github.com/alixaxel/chrome-aws-lambda
+      runtime: lambda.Runtime.NODEJS_12_X, // as per https://github.com/alixaxel/chrome-aws-lambda
       timeout: Duration.minutes(3),
       memorySize: 1024,
       environment: {
@@ -142,7 +142,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const logExporter = new lambda.Function(this, 'logExporter', {
       code: new lambda.AssetCode('./dist/log-exporter'),
       handler: 'elasticsearch.handler',
-      runtime: lambda.Runtime.NODEJS_10_X,
+      runtime: lambda.Runtime.NODEJS_12_X,
       timeout: Duration.minutes(5),
       memorySize: 128,
       environment: {

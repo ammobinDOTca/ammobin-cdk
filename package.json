@@ -10,25 +10,25 @@
     "cdk": "cdk"
   },
   "devDependencies": {
-    "@aws-cdk/aws-cloudfront": "^1.17.1",
-    "@aws-cdk/aws-logs-destinations": "^1.17.1",
-    "@aws-cdk/aws-s3": "^1.17.1",
+    "@aws-cdk/aws-cloudfront": "^1.18.0",
+    "@aws-cdk/aws-logs-destinations": "^1.18.0",
+    "@aws-cdk/aws-s3": "^1.18.0",
     "@types/aws-lambda": "^8.10.36",
-    "@types/node": "^12.12.11",
-    "aws-cdk": "^1.17.1",
+    "@types/node": "^12.12.14",
+    "aws-cdk": "^1.18.0",
     "sha256-file": "^1.0.0",
-    "ts-node": "^8.5.2",
+    "ts-node": "^8.5.4",
     "typescript": "^3.7.2"
   },
   "dependencies": {
-    "@aws-cdk/aws-apigateway": "^1.17.1",
-    "@aws-cdk/aws-dynamodb": "^1.17.1",
-    "@aws-cdk/aws-lambda-event-sources": "^1.17.1",
-    "@aws-cdk/aws-s3-deployment": "^1.17.1",
-    "@aws-cdk/aws-secretsmanager": "^1.17.1",
-    "@aws-cdk/aws-sns": "^1.17.1",
-    "@aws-cdk/aws-sns-subscriptions": "^1.17.1",
-    "@aws-cdk/aws-sqs": "^1.17.1",
-    "@aws-cdk/core": "^1.17.1"
+    "@aws-cdk/aws-apigateway": "^1.18.0",
+    "@aws-cdk/aws-dynamodb": "^1.18.0",
+    "@aws-cdk/aws-lambda-event-sources": "^1.18.0",
+    "@aws-cdk/aws-s3-deployment": "^1.18.0",
+    "@aws-cdk/aws-secretsmanager": "^1.18.0",
+    "@aws-cdk/aws-sns": "^1.18.0",
+    "@aws-cdk/aws-sns-subscriptions": "^1.18.0",
+    "@aws-cdk/aws-sqs": "^1.18.0",
+    "@aws-cdk/core": "^1.18.0"
   }
 }
