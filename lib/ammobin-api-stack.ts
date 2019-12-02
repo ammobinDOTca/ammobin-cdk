@@ -1,8 +1,6 @@
 import lambda = require('@aws-cdk/aws-lambda')
 import apigateway = require('@aws-cdk/aws-apigateway')
 import cdk = require('@aws-cdk/core')
-import s3 = require('@aws-cdk/aws-s3')
-import cloudfront = require('@aws-cdk/aws-cloudfront')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import { Duration } from '@aws-cdk/core'
 import { LOG_RETENTION } from './constants'
@@ -18,18 +16,18 @@ export class AmmobinApiStack extends cdk.Construct {
     id: string,
     props: {
       url: string
-      src: string
       handler: string
       name: string
       // env to pass to lambda
       environment: any
+      code: lambda.AssetCode,
       timeout?: Duration
     }
   ) {
     super(scope, id)
-    const apiCode = new lambda.AssetCode(props.src)
+    const { code } = props
     const apiLambda = new lambda.Function(this, props.name + 'Lambda', {
-      code: apiCode,
+      code,
       handler: props.handler,
       runtime: lambda.Runtime.NODEJS_12_X,
       environment: props.environment,
@@ -62,8 +60,8 @@ export class AmmobinApiStack extends cdk.Construct {
 
     if (props.name.startsWith('api')) {
       const graphqlLambda = new lambda.Function(this, 'graphql', {
-        code: apiCode,
-        handler: 'dist/api/graphql-lambda.handler',
+        code,
+        handler: 'src/api/graphql-lambda.handler',
         runtime: lambda.Runtime.NODEJS_12_X,
         timeout: Duration.seconds(30),
         memorySize: 192,
@@ -71,11 +69,16 @@ export class AmmobinApiStack extends cdk.Construct {
         logRetention: LOG_RETENTION
       })
       this.graphqlLambda = graphqlLambda
-      clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda))
+      clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda), {
+        operationName: 'graphql',
+        requestParameters: {
+          'method.request.querystring.query': false, // NOTE: this has to be uri encoded
+          'method.request.querystring.parameters': false
+        }
+      })
     }
     clientResource.addResource('{proxy+}').addMethod('ANY', new apigateway.LambdaIntegration(apiLambda))
 
-    this.code = apiCode
     this.lambda = apiLambda
     this.api = api
   }

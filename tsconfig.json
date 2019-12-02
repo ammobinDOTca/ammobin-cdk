@@ -20,5 +20,5 @@
     "typeRoots": ["./node_modules/@types"]
   },
   "exclude": ["cdk.out"],
-  "include": ["./lib/**/*.ts", "./bin/*.ts", "./edge-lambdas/**/*.ts", "./log-exporter/*.ts"]
+  "include": ["./lib/**/*.ts", "./bin/*.ts", "./edge-lambdas/**/*.ts", "./log-exporter/*.ts", "./image-proxy/**/*.ts"]
 }

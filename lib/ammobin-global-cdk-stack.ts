@@ -168,10 +168,29 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             {
               isDefaultBehavior: false,
               pathPattern: 'api/*',
+              forwardedValues: {
+                queryString: true,
+              },
               allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
               cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
               defaultTtl: Duration.days(365),
               minTtl: Duration.days(1), // incase we ever move to GETs for graphql requests....
+            },
+          ],
+        },
+        // image proxy, cache for a year...
+        {
+          customOriginSource: {
+            domainName: 'images.' + props.publicUrl
+          },
+          behaviors: [
+            {
+              isDefaultBehavior: false,
+              pathPattern: 'images/*',
+              allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+              cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD,
+              defaultTtl: Duration.days(365),
+              minTtl: Duration.days(365),
             },
           ],
         },

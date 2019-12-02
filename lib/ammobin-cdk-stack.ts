@@ -10,9 +10,11 @@ import events = require('@aws-cdk/aws-events')
 import sm = require('@aws-cdk/aws-secretsmanager')
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { RetentionDays } from '@aws-cdk/aws-logs'
-import * as kinesis from '@aws-cdk/aws-kinesis'
+
 import { exportLambdaLogsToLogger } from './helper'
 import { Secret } from '@aws-cdk/aws-secretsmanager'
+
+import { AmmobinImagesStack } from './ammobin-images-stack'
 
 interface IAmmobinCdkStackProps extends cdk.StackProps {
   publicUrl: string
@@ -51,10 +53,15 @@ export class AmmobinCdkStack extends cdk.Stack {
     //   timeout: Duration.seconds(30),
     // })
 
+
+    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl })
+
+    const code = new lambda.AssetCode('../ammobin-api/lambda')
+
     const api = new AmmobinApiStack(this, 'ammobin-api', {
-      handler: 'dist/api/lambda.handler',
+      handler: 'src/api/lambda.handler',
       name: 'apiLambda',
-      src: '../ammobin-api',
+      code,
       url: 'api.' + props.publicUrl,
       environment: {
         TABLE_NAME,
@@ -82,10 +89,9 @@ export class AmmobinCdkStack extends cdk.Stack {
       visibilityTimeout: Duration.minutes(3), // same as worker
     })
     // keep outside of this dir, had issues with symlinks breaking the upload...
-    const apiCode = new lambda.AssetCode('../ammobin-api')
     const refresherLambda = new lambda.Function(this, 'refresher', {
-      code: apiCode,
-      handler: 'dist/refresher/lambda.handler',
+      code,
+      handler: 'src/refresher/lambda.handler',
       runtime: lambda.Runtime.NODEJS_12_X,
       timeout: Duration.minutes(3),
       // memorySize: 1024,
@@ -114,8 +120,8 @@ export class AmmobinCdkStack extends cdk.Stack {
     //todo: future opt -> 2 lambdas, high memory and low memory...
     // with 2 sqs queues
     const workerLambda = new lambda.Function(this, 'worker', {
-      code: apiCode,
-      handler: 'dist/worker/lambda.handler',
+      code,
+      handler: 'src/worker/lambda.handler',
       runtime: lambda.Runtime.NODEJS_12_X, // as per https://github.com/alixaxel/chrome-aws-lambda
       timeout: Duration.minutes(3),
       memorySize: 1024,
