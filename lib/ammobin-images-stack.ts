@@ -23,7 +23,8 @@ export class AmmobinImagesStack extends cdk.Construct {
       handler: 'main.handler',
       runtime: lambda.Runtime.NODEJS_12_X,
       environment: {
-        production: 'true'
+        production: 'true',
+        'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
       },
       timeout: Duration.seconds(30),
       logRetention: LOG_RETENTION,
@@ -44,7 +45,15 @@ export class AmmobinImagesStack extends cdk.Construct {
         endpointType: apigateway.EndpointType.REGIONAL,
         domainName: props.url,
       },
+      binaryMediaTypes: ['*/*'], // lazy
       deployOptions: { stageName: 'images' }, // to match with cloudfront path pattern ;)
+    })
+    api.addUsagePlan('throttle', {
+      description: 'dont kill the aws bill',
+      throttle: {
+        burstLimit: 250,
+        rateLimit: 100
+      }
     })
     api.domainName
     api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))

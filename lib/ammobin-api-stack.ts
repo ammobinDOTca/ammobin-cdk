@@ -38,7 +38,7 @@ export class AmmobinApiStack extends cdk.Construct {
     const api = new apigateway.RestApi(this, props.name + 'AGW', {
       restApiName: props.name,
       description: `api for ${props.name} lambda`,
-      endpointTypes: [apigateway.EndpointType.REGIONAL],
+      endpointTypes: [apigateway.EndpointType.EDGE],
       domainName: {
         certificate: new acm.Certificate(this, props.name + 'Cert', {
           domainName: props.url,
@@ -54,6 +54,14 @@ export class AmmobinApiStack extends cdk.Construct {
       },
       deployOptions: { stageName: 'api' }, // to match with cloudfront path pattern ;)
     })
+    api.addUsagePlan('throttle', {
+      description: 'dont kill the aws bill',
+      throttle: {
+        burstLimit: 250,
+        rateLimit: 100
+      }
+    })
+
     api.domainName
     api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
     const clientResource = api.root.addResource('api')
