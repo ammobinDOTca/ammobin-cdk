@@ -80,6 +80,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       }
     })
 
+    // todo: delete this bucket if/when github page alternative is confirmed working
     // Content bucket
     const siteBucket = new s3.Bucket(this, 'SiteBucket', {
       bucketName: props.siteBucket,
@@ -123,9 +124,13 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       ],
       originConfigs: [
         {
-          s3OriginSource: {
-            s3BucketSource: siteBucket,
-            originAccessIdentityId: cfIdentityResource.ref
+          //   s3OriginSource: {
+          //     s3BucketSource: siteBucket,
+          //     originAccessIdentityId: cfIdentityResource.ref
+          //   },
+          // see https://github.com/ammobinDOTca/s3-bucket
+          customOriginSource: {
+            domainName: 'client.github.ammobin.ca'
           },
           behaviors: [
             {
@@ -147,9 +152,13 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         },
         {
           // save a few pennies by not running edge lambda for most of the static assets
-          s3OriginSource: {
-            s3BucketSource: siteBucket,
-            originAccessIdentityId: cfIdentityResource.ref
+          // s3OriginSource: {
+          //   s3BucketSource: siteBucket,
+          //   originAccessIdentityId: cfIdentityResource.ref
+          // },
+          // see https://github.com/ammobinDOTca/s3-bucket
+          customOriginSource: {
+            domainName: 'client.github.ammobin.ca'
           },
           behaviors: [
             {
