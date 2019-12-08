@@ -25,8 +25,8 @@ async function resizeImage(url: string, width: number): Promise<{ contentType: s
       img.push(d)
     })
     res.on('end', () => resolve({ srcData: Buffer.concat(img), contentType }))
-    res.on('error', e => reject(e))
-    res.on('aborted', e => reject(e))
+    res.on('error', e => reject({ statusCode: 502, body: `image request errored: ${e.name} ${e.message}` }))
+    res.on('aborted', e => reject({ statusCode: 502, body: `image request aborted: ${e.name} ${e.message}` }))
   }))
 
 
@@ -61,23 +61,33 @@ export async function handler(event: APIGatewayEvent) {
 
 
   const s = event.path.split('/')
-  if (s.length > 4) {
+  if (s.length < 3) {
     return <APIGatewayProxyResult>{
       statusCode: 404,
-      body: `invalid path ${event.path}.`
+      body: JSON.stringify({ message: `invalid path ${event.path}.` })
     }
   }
 
   const width = parseInt(s[2].split('x')[1])
   const url = s.slice(3).join('/')
-  const { contentType, body } = await resizeImage(url, width)
-  return <APIGatewayProxyResult>{
-    statusCode: 200,
-    headers: {
-      'Content-Type': contentType
-    },
-    body,
-    isBase64Encoded: true
+  try {
+    const { contentType, body } = await resizeImage(url, width)
+    return <APIGatewayProxyResult>{
+      statusCode: 200,
+      headers: {
+        'Content-Type': contentType
+      },
+      body,
+      isBase64Encoded: true
+    }
+  } catch (e) {
+    console.error(e)
+    if (e && e.statusCode) {
+      return e // handled invalid request
+    } else {
+      throw e
+    }
+
   }
 }
 // import { writeFileSync } from 'fs'
