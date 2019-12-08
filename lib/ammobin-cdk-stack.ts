@@ -41,27 +41,12 @@ export class AmmobinCdkStack extends cdk.Stack {
       // todo: enable streams?
     })
 
-    // new AmmobinApiStack(this, 'ammobin-client', {
-    //   handler: 'lambda.nuxt',
-    //   name: 'nuxtLambda',
-    //   src: './src/ammobin-client-built',
-    //   url: CLIENT_URL, // had trouble during development
-    //   environment: {
-    //     NODE_ENV,
-    //     DONT_LOG_CONSOLE
-    //   },
-    //   timeout: Duration.seconds(30),
-    // })
-
-
     new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl })
-
-    const code = new lambda.AssetCode('../ammobin-api/lambda')
+    const CODE_BASE = '../ammobin-api/lambda/'
 
     const api = new AmmobinApiStack(this, 'ammobin-api', {
-      handler: 'src/api/lambda.handler',
       name: 'apiLambda',
-      code,
+      CODE_BASE,
       url: 'api.' + props.publicUrl,
       environment: {
         TABLE_NAME,
@@ -88,10 +73,11 @@ export class AmmobinCdkStack extends cdk.Stack {
     const workQueue = new sqs.Queue(this, 'workQueue', {
       visibilityTimeout: Duration.minutes(3), // same as worker
     })
+
     // keep outside of this dir, had issues with symlinks breaking the upload...
     const refresherLambda = new lambda.Function(this, 'refresher', {
-      code,
-      handler: 'src/refresher/lambda.handler',
+      code: new lambda.AssetCode(CODE_BASE + 'refresher'),
+      handler: 'refresher.handler',
       runtime: lambda.Runtime.NODEJS_12_X,
       timeout: Duration.minutes(3),
       // memorySize: 1024,
@@ -120,8 +106,8 @@ export class AmmobinCdkStack extends cdk.Stack {
     //todo: future opt -> 2 lambdas, high memory and low memory...
     // with 2 sqs queues
     const workerLambda = new lambda.Function(this, 'worker', {
-      code,
-      handler: 'src/worker/lambda.handler',
+      code: new lambda.AssetCode(CODE_BASE + 'worker'),
+      handler: 'worker.handler',
       runtime: lambda.Runtime.NODEJS_12_X, // as per https://github.com/alixaxel/chrome-aws-lambda
       timeout: Duration.minutes(3),
       memorySize: 1024,
@@ -132,7 +118,12 @@ export class AmmobinCdkStack extends cdk.Stack {
         DONT_LOG_CONSOLE
       },
       logRetention: LOG_RETENTION,
-      description: 'listens to queue of scrape tasks and performs a search and stores the result in the db'
+      description: 'listens to queue of scrape tasks and performs a search and stores the result in the db',
+      layers: [
+        // but this is not yet working as of dev 7 2019 ....
+        //https://github.com/shelfio/chrome-aws-lambda-layer
+        lambda.LayerVersion.fromLayerVersionArn(this, 'shelfio_chrome-aws-lambda-layer', 'arn:aws:lambda:ca-central-1:764866452798:layer:chrome-aws-lambda:8')
+      ]
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))
 

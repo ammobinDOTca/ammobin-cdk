@@ -10,34 +10,34 @@ export class AmmobinApiStack extends cdk.Construct {
   code: lambda.AssetCode
   lambda: lambda.Function
   api: apigateway.RestApi
-  graphqlLambda?: lambda.Function
+  graphqlLambda: lambda.Function
   constructor(
     scope: cdk.Construct,
     id: string,
     props: {
       url: string
-      handler: string
       name: string
+      CODE_BASE: String
       // env to pass to lambda
       environment: any
-      code: lambda.AssetCode,
-      timeout?: Duration
+
+
     }
   ) {
     super(scope, id)
-    const { code } = props
+
     const apiLambda = new lambda.Function(this, props.name + 'Lambda', {
-      code,
-      handler: props.handler,
+      code: new lambda.AssetCode(props.CODE_BASE + 'api'),
+      handler: 'api.handler',
       runtime: lambda.Runtime.NODEJS_12_X,
       environment: props.environment,
-      timeout: props.timeout || Duration.seconds(3),
+      timeout: Duration.seconds(3),
       logRetention: LOG_RETENTION
     })
 
     const api = new apigateway.RestApi(this, props.name + 'AGW', {
       restApiName: props.name,
-      description: `api for ${props.name} lambda`,
+      description: `api for api lambda`,
       endpointTypes: [apigateway.EndpointType.EDGE],
       domainName: {
         certificate: new acm.Certificate(this, props.name + 'Cert', {
@@ -66,25 +66,23 @@ export class AmmobinApiStack extends cdk.Construct {
     api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
     const clientResource = api.root.addResource('api')
 
-    if (props.name.startsWith('api')) {
-      const graphqlLambda = new lambda.Function(this, 'graphql', {
-        code,
-        handler: 'src/api/graphql-lambda.handler',
-        runtime: lambda.Runtime.NODEJS_12_X,
-        timeout: Duration.seconds(30),
-        memorySize: 192,
-        environment: props.environment,
-        logRetention: LOG_RETENTION
-      })
-      this.graphqlLambda = graphqlLambda
-      clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda), {
-        operationName: 'graphql',
-        requestParameters: {
-          'method.request.querystring.query': false, // NOTE: this has to be uri encoded
-          'method.request.querystring.parameters': false
-        }
-      })
-    }
+    const graphqlLambda = new lambda.Function(this, 'graphql', {
+      code: new lambda.AssetCode(props.CODE_BASE + 'graphql'),
+      handler: 'graphql.handler',
+      runtime: lambda.Runtime.NODEJS_12_X,
+      timeout: Duration.seconds(30),
+      memorySize: 192,
+      environment: props.environment,
+      logRetention: LOG_RETENTION
+    })
+    this.graphqlLambda = graphqlLambda
+    clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda), {
+      operationName: 'graphql',
+      requestParameters: {
+        'method.request.querystring.query': false, // NOTE: this has to be uri encoded
+        'method.request.querystring.parameters': false
+      }
+    })
     clientResource.addResource('{proxy+}').addMethod('ANY', new apigateway.LambdaIntegration(apiLambda))
 
     this.lambda = apiLambda
