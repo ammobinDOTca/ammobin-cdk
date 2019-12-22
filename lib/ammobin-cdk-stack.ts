@@ -65,10 +65,10 @@ export class AmmobinCdkStack extends cdk.Stack {
     // TODO: manually update this key: https://ca-central-1.console.aws.amazon.com/secretsmanager/home?region=ca-central-1#/secret?name=rendertronUrl
     //https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_update-secret.html
     // note: not used currently b/c using internal pupeteer
-    const rendertronUrl = new sm.Secret(this, 'rendertronUrl', {
-      secretName: 'rendertronUrl',
-      description: 'url to rendertron deployed to herkou',
-    })
+    // const rendertronUrl = new sm.Secret(this, 'rendertronUrl', {
+    //   secretName: 'rendertronUrl',
+    //   description: 'url to rendertron deployed to herkou',
+    // })
 
     const workQueue = new sqs.Queue(this, 'workQueue', {
       visibilityTimeout: Duration.minutes(3), // same as worker
@@ -97,7 +97,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         hour: '8',
         minute: '1',
       }),
-      enabled: false // todo: re-enable once ready to go to prod
+      enabled: true // todo: re-enable once ready to go to prod
     })
     refresherLambda.addEventSource(new CloudwatchScheduleEvent(refreshCron))
 
@@ -127,7 +127,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     })
     workerLambda.addEventSource(new SqsEventSource(workQueue))
 
-    rendertronUrl.grantRead(workerLambda)
+    // rendertronUrl.grantRead(workerLambda)
     itemsTable.grantWriteData(workerLambda)
     workQueue.grantConsumeMessages(workerLambda)
 
