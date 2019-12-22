@@ -23,7 +23,7 @@ cdk deploy GrafanaIamStack (optional)
 - custom name DNS validation
   - copy down acm dns validation check from build output
   - set up cname from api.<BASE DOMAIN> to 'Target Domain Name' from custom domains tab on api gateway. set a short TTL on it (for easier turn around time debugging if things go wrong))
-- daily nuxt generate + s3 upload
+- daily nuxt generate + s3 upload -> github pages + actions
 - elasticsearch endpoint for log exporter to send stuff to
 
 ---
@@ -51,4 +51,5 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 ## todo code:
 
 - run nuxt within lambda
-- cold starts for api/graphql lambdas
+- cold starts for api/graphql lambdas (webpack helped a lot -> smaller packages, and 600ms reduced boot time)
+
