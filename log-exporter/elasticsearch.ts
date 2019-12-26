@@ -28,6 +28,10 @@ export async function handler(event: CloudWatchLogsEvent) {
         }) as any,
       ]
     });
+    logger.on('error', function (err) {
+      console.error('unexpected error in winston logger', err)
+    });
+
   }
   const buff = await promisify(unzip)(Buffer.from(event.awslogs.data, "base64"))
   try {
