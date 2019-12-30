@@ -72,6 +72,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/security-headers.ts'), {
       lambda: securityHeaders,
     })
+
     this.nuxtRerouterVersion = nuxtRerouterVersion
 
     const cfIdentityResource = new cloudfront.CfnCloudFrontOriginAccessIdentity(this, 'siteBucketAccess', {
@@ -142,7 +143,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 {
                   eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
                   lambdaFunction: securityHeadersVersion
-                }
+                },
               ],
               isDefaultBehavior: true,
               defaultTtl: Duration.days(365),
@@ -182,7 +183,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               },
               allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
               cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
-              defaultTtl: Duration.days(365),
+              defaultTtl: Duration.days(1),
               minTtl: Duration.days(1), // incase we ever move to GETs for graphql requests....
             },
           ],

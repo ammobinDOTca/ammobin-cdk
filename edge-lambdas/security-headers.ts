@@ -24,9 +24,12 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
   // set custom cache age for generated html pages (want to only cache for upto 24hrs until we regen ht page)
   // nuxt-rerouter should append .html for the pages that need it for finding the page in s3
   if (event.Records[0].cf.request.uri.endsWith('.html')) {
+    // pages get regenerated at 12am UTC
+    const now = new Date()
+    const maxAge = Math.max((24 - now.getHours() * 60 * 60) + (60 - now.getMinutes() * 60) + (60 - now.getSeconds()), 1)
     response.headers['cache-control'] = [{
       key: 'Cache-Control',
-      value: 'max-age=1' // todo: calculate this from how much time till page is regenerated
+      value: 'max-age=' + maxAge
     }]
   }
 
