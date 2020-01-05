@@ -15,7 +15,8 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
     'x-frame-options': [{ key: 'X-Frame-Options', value: "DENY" }],
     'content-security-policy': [{
       key: 'Content-Security-Policy',
-      value: "default-src 'self';script-src 'self' 'unsafe-inline' https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self';" //  report-uri https://aws.ammobin.ca/api/content-security-report-uri" // dont bother reporting this, noise is not worth the bill
+      // todo: serve workbox myself
+      value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self';" //  report-uri https://aws.ammobin.ca/api/content-security-report-uri" // dont bother reporting this, noise is not worth the bill
     }],
     'referrer-policy': [{ key: 'Referrer-policy', value: 'origin' }],
     ...response.headers
@@ -26,7 +27,7 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
   if (event.Records[0].cf.request.uri.endsWith('.html')) {
     // pages get regenerated at 12am UTC
     const now = new Date()
-    const maxAge = Math.max((24 - now.getHours() * 60 * 60) + (60 - now.getMinutes() * 60) + (60 - now.getSeconds()), 1)
+    const maxAge = Math.max(((24 - now.getHours()) * 60 * 60) + ((60 - now.getMinutes()) * 60) + (60 - now.getSeconds()), 1)
     response.headers['cache-control'] = [{
       key: 'Cache-Control',
       value: 'max-age=' + maxAge
