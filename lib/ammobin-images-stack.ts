@@ -3,8 +3,8 @@ import apigateway = require('@aws-cdk/aws-apigateway')
 import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import { Duration } from '@aws-cdk/core'
-import { LOG_RETENTION } from './constants'
-
+import { LOG_RETENTION, Stage } from './constants'
+import { CfnApplication } from '@aws-cdk/aws-sam'
 export class AmmobinImagesStack extends cdk.Construct {
 
 
@@ -12,10 +12,19 @@ export class AmmobinImagesStack extends cdk.Construct {
     scope: cdk.Construct,
     id: string,
     props: {
-      url: string
+      url: string,
+      stage: Stage
     }
   ) {
     super(scope, id)
+
+    const imageMagic = new CfnApplication(scope as any, 'imageMagic', {
+      location: {
+        applicationId: 'arn:aws:serverlessrepo:us-east-1:145266761615:applications/image-magick-lambda-layer',
+        semanticVersion: '1.0.0'
+      }
+    })
+
     const code = new lambda.AssetCode('./dist/image-proxy')
     const name = 'imagesProxy'
     const apiLambda = new lambda.Function(this, name + 'Lambda', {
@@ -29,8 +38,8 @@ export class AmmobinImagesStack extends cdk.Construct {
       timeout: Duration.seconds(30),
       logRetention: LOG_RETENTION,
       layers: [
-        // https://serverlessrepo.aws.amazon.com/applications/arn:aws:serverlessrepo:us-east-1:145266761615:applications~image-magick-lambda-layer
-        lambda.LayerVersion.fromLayerVersionArn(this, 'lazyARN', 'arn:aws:lambda:ca-central-1:911856505652:layer:image-magick:1')]
+        lambda.LayerVersion.fromLayerVersionArn(this, 'imageLayer', imageMagic.getAtt('Outputs.LayerVersion').toString())
+      ]
     })
 
     const api = new apigateway.RestApi(this, name + 'AGW', {

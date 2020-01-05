@@ -2,7 +2,7 @@ import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import lambda = require('@aws-cdk/aws-lambda')
 import iam = require('@aws-cdk/aws-iam')
-import { LOG_RETENTION } from './constants'
+import { LOG_RETENTION, Stage } from './constants'
 import { Duration } from '@aws-cdk/core'
 
 import s3 = require('@aws-cdk/aws-s3')
@@ -12,7 +12,8 @@ import { PolicyStatement, CanonicalUserPrincipal } from '@aws-cdk/aws-iam'
 
 interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
   publicUrl: string,
-  siteBucket: string
+  siteBucket: string,
+  stage: Stage
 }
 
 export class AmmobinGlobalCdkStack extends cdk.Stack {
@@ -45,7 +46,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       code: apiCode,
       handler: 'nuxt-rerouter.handler',
       runtime: lambda.Runtime.NODEJS_10_X,
-      environment: {},
+      environment: {
+        STAGE: props.stage,
+        SITE: props.publicUrl,
+        NODE_ENV: 'production'
+
+      },
       timeout: Duration.seconds(3),
       role: lambdaRole,
       logRetention: LOG_RETENTION,
@@ -56,7 +62,11 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       code: apiCode,
       handler: 'security-headers.handler',
       runtime: lambda.Runtime.NODEJS_10_X,
-      environment: {},
+      environment: {
+        STAGE: props.stage,
+        SITE: props.publicUrl,
+        NODE_ENV: 'production'
+      },
       timeout: Duration.seconds(3),
       role: lambdaRole,
       logRetention: LOG_RETENTION

@@ -1,5 +1,5 @@
 import { LambdaDestination } from "@aws-cdk/aws-logs-destinations"
-import * as CloudWatchLogs from '@aws-cdk/aws-logs'
+import { ILogGroup, LogGroup } from '@aws-cdk/aws-logs'
 import cdk = require('@aws-cdk/core')
 import Lambda = require('@aws-cdk/aws-lambda')
 import * as iam from '@aws-cdk/aws-iam'
@@ -9,21 +9,15 @@ import * as iam from '@aws-cdk/aws-iam'
  * @param lambda
  * @param kinesis
  */
-export function exportLambdaLogsToLogger(stack: cdk.Stack, lambda: Lambda.Function, logLambda: Lambda.Function): CloudWatchLogs.ILogGroup {
+export function exportLambdaLogsToLogger(stack: cdk.Stack, lambda: Lambda.Function, logLambda: Lambda.Function): ILogGroup {
   //recreate log group from assumption of auto created lambda log
 
-  const logGroup = CloudWatchLogs.LogGroup.fromLogGroupArn(stack, lambda.node.uniqueId + 'Logs', cdk.Arn.format({
-    service: 'logs',
-    resource: 'log-group',
-    sep: ':',
-    resourceName: '/aws/lambda/' + lambda.functionName
-  }, stack))
 
+  lambda.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: stack.region }))
 
-  // const f = new iam.ServicePrincipal(`logs.${stack.region}.amazonaws.com`, { region: stack.region })
-  const f = new iam.ServicePrincipal(`logs.amazonaws.com`, { region: stack.region })
-
-  lambda.grantInvoke(f)
+  const logGroup = new LogGroup(stack, lambda.node.uniqueId + 'Logs', {
+    logGroupName: '/aws/lambda/' + lambda.functionName
+  })
   logGroup.addSubscriptionFilter('getAllJson' + lambda.node.uniqueId, {
     filterPattern: {
       logPatternString: '{$.level = "info"}' // all logs should be at this level (want all json logs, no need to export lambda cruff)

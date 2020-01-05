@@ -10,11 +10,12 @@ ammobin.ca rebuilt on AWS serverless technologies using AWS-CDK
 - install node 12 + cdk
 
 ```
+export publicUrl=<your site domain aka ammobin.ca>
 npm run build
 cdk bootstrap
 cdk deploy AmmobinCdkStack
 cdk deploy AmmobinGlobalCdkStack
-cdk deploy s3UploadStack
+cdk deploy s3UploadStack (optional)
 cdk deploy GrafanaIamStack (optional)
 ```
 
@@ -52,4 +53,3 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 
 - run nuxt within lambda -> remove images from zip
 - cold starts for api/graphql lambdas (webpack helped a lot -> smaller packages, and 600ms reduced boot time)
-

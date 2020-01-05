@@ -4,7 +4,7 @@ import dynamodb = require('@aws-cdk/aws-dynamodb')
 import sqs = require('@aws-cdk/aws-sqs')
 import { SqsEventSource, KinesisEventSource, StreamEventSource } from '@aws-cdk/aws-lambda-event-sources'
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { LOG_RETENTION } from './constants'
+import { LOG_RETENTION, Stage } from './constants'
 import { Duration } from '@aws-cdk/core'
 import events = require('@aws-cdk/aws-events')
 import sm = require('@aws-cdk/aws-secretsmanager')
@@ -17,7 +17,8 @@ import { Secret } from '@aws-cdk/aws-secretsmanager'
 import { AmmobinImagesStack } from './ammobin-images-stack'
 
 interface IAmmobinCdkStackProps extends cdk.StackProps {
-  publicUrl: string
+  publicUrl: string,
+  stage: Stage
 }
 
 export class AmmobinCdkStack extends cdk.Stack {
@@ -30,6 +31,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const PRIMARY_KEY = 'id'
     const TABLE_NAME = 'ammobinItems'
     const HASH_SECRET = 'TODO-REAL-SECRET' //
+    const STAGE = props.stage
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: TABLE_NAME,
@@ -38,10 +40,10 @@ export class AmmobinCdkStack extends cdk.Stack {
         type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      // todo: enable streams?
+      removalPolicy: cdk.RemovalPolicy.DESTROY
     })
 
-    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl })
+    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props: stage })
     const CODE_BASE = '../ammobin-api/lambda/'
 
     const api = new AmmobinApiStack(this, 'ammobin-api', {
@@ -53,7 +55,8 @@ export class AmmobinCdkStack extends cdk.Stack {
         PRIMARY_KEY,
         NODE_ENV,
         DONT_LOG_CONSOLE,
-        HASH_SECRET
+        HASH_SECRET,
+        STAGE,
       },
     })
 
@@ -74,6 +77,11 @@ export class AmmobinCdkStack extends cdk.Stack {
       visibilityTimeout: Duration.minutes(3), // same as worker
     })
 
+    const largeMemoryQueue = new sqs.Queue(this, 'LargeMemoryWorkQueue', {
+      visibilityTimeout: Duration.minutes(5),
+    })
+
+
     // keep outside of this dir, had issues with symlinks breaking the upload...
     const refresherLambda = new lambda.Function(this, 'refresher', {
       code: new lambda.AssetCode(CODE_BASE + 'refresher'),
@@ -83,7 +91,9 @@ export class AmmobinCdkStack extends cdk.Stack {
       // memorySize: 1024,
       environment: {
         QueueUrl: workQueue.queueUrl,
+        LargeMemoryQueueUrl: largeMemoryQueue.queueUrl,
         NODE_ENV,
+        STAGE,
         DONT_LOG_CONSOLE
       },
       logRetention: RetentionDays.ONE_MONTH,
@@ -103,33 +113,30 @@ export class AmmobinCdkStack extends cdk.Stack {
 
 
     workQueue.grantSendMessages(refresherLambda)
-    //todo: future opt -> 2 lambdas, high memory and low memory...
-    // with 2 sqs queues
-    const workerLambda = new lambda.Function(this, 'worker', {
-      code: new lambda.AssetCode(CODE_BASE + 'worker'),
-      handler: 'worker.handler',
-      runtime: lambda.Runtime.NODEJS_12_X, // as per https://github.com/alixaxel/chrome-aws-lambda
-      timeout: Duration.minutes(3),
-      memorySize: 1024,
-      environment: {
-        TABLE_NAME,
-        PRIMARY_KEY,
-        NODE_ENV,
-        DONT_LOG_CONSOLE
-      },
-      logRetention: LOG_RETENTION,
-      description: 'listens to queue of scrape tasks and performs a search and stores the result in the db',
-      layers: [
-        // but this is not yet working as of dev 7 2019 ....
-        //https://github.com/shelfio/chrome-aws-lambda-layer
-        lambda.LayerVersion.fromLayerVersionArn(this, 'shelfio_chrome-aws-lambda-layer', 'arn:aws:lambda:ca-central-1:764866452798:layer:chrome-aws-lambda:8')
-      ]
-    })
-    workerLambda.addEventSource(new SqsEventSource(workQueue))
+    largeMemoryQueue.grantSendMessages(refresherLambda)
+
+    const workerCode = new lambda.AssetCode(CODE_BASE + 'worker')
+    const workerLambda = this.generateWorker('worker', {
+      TABLE_NAME,
+      PRIMARY_KEY,
+      NODE_ENV,
+      STAGE,
+      DONT_LOG_CONSOLE,
+      'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
+    }, workQueue, Duration.minutes(3), workerCode, 1024)
+
+    const largeMemoryWorkerLambda = this.generateWorker('largeMemoryWorker', {
+      TABLE_NAME,
+      PRIMARY_KEY,
+      NODE_ENV,
+      STAGE,
+      DONT_LOG_CONSOLE,
+      'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
+    }, largeMemoryQueue, Duration.minutes(5), workerCode, 3008)
 
     // rendertronUrl.grantRead(workerLambda)
     itemsTable.grantWriteData(workerLambda)
-    workQueue.grantConsumeMessages(workerLambda)
+    itemsTable.grantWriteData(largeMemoryWorkerLambda)
 
     // manually set the value of this secret once created
     const esUrlSecret = new Secret(this, 'esUrlSecret', {
@@ -144,6 +151,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       memorySize: 128,
       environment: {
         NODE_ENV,
+        STAGE,
         DONT_LOG_CONSOLE,
         ES_URL_SECRET_ID: esUrlSecret.secretArn
       },
@@ -151,8 +159,6 @@ export class AmmobinCdkStack extends cdk.Stack {
       description: 'listens to kinesis stream of all log messages, and forwards them to elastic search'
     })
     esUrlSecret.grantRead(logExporter);
-
-
 
     [
       workerLambda,
@@ -163,5 +169,27 @@ export class AmmobinCdkStack extends cdk.Stack {
 
 
 
+  }
+
+  private generateWorker(name, environment, queue, timeout, code, memorySize) {
+
+    const workerLambda = new lambda.Function(this, name, {
+      code,
+      handler: 'worker.handler',
+      runtime: lambda.Runtime.NODEJS_12_X,
+      timeout,
+      memorySize,
+      environment,
+      logRetention: LOG_RETENTION,
+      description: 'listens to queue of scrape tasks and performs a search and stores the result in the db',
+      layers: [
+        //https://github.com/shelfio/chrome-aws-lambda-layer
+        lambda.LayerVersion.fromLayerVersionArn(this, name + 'shelfio_chrome-aws-lambda-layer', 'arn:aws:lambda:ca-central-1:764866452798:layer:chrome-aws-lambda:8')
+      ]
+    })
+    workerLambda.addEventSource(new SqsEventSource(queue))
+    queue.grantConsumeMessages(workerLambda)
+
+    return workerLambda
   }
 }
