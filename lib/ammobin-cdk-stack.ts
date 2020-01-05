@@ -107,7 +107,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         hour: '8',
         minute: '1',
       }),
-      enabled: true // todo: re-enable once ready to go to prod
+      enabled: props.stage === 'prod' // don't run the full cron schedule for beta (todo: have refresher only do a small subset)
     })
     refresherLambda.addEventSource(new CloudwatchScheduleEvent(refreshCron))
 
