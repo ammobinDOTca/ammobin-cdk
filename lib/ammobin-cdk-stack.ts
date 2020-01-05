@@ -43,7 +43,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY
     })
 
-    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props: stage })
+    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage })
     const CODE_BASE = '../ammobin-api/lambda/'
 
     const api = new AmmobinApiStack(this, 'ammobin-api', {
