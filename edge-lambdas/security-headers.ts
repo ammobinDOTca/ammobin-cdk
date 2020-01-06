@@ -2,6 +2,7 @@ import { CloudFrontResponseEvent, Context, Callback } from 'aws-lambda'
 // add some security headers to our page responses + custom cache header
 // values taken from caddyfile in ammobin-compose
 export function handler(event: CloudFrontResponseEvent, context: Context, cb: Callback) {
+  const request = event.Records[0].cf.request
   const response = event.Records[0].cf.response
 
   response.headers = {
@@ -16,18 +17,23 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
     'content-security-policy': [{
       key: 'Content-Security-Policy',
       // todo: serve workbox myself
-      value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self';" //  report-uri https://aws.ammobin.ca/api/content-security-report-uri" // dont bother reporting this, noise is not worth the bill
+      value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self';" //  report-uri https://ammobin.ca/api/content-security-report-uri" // dont bother reporting this, noise is not worth the bill
     }],
     'referrer-policy': [{ key: 'Referrer-policy', value: 'origin' }],
     ...response.headers
   }
 
-  // set custom cache age for generated html pages (want to only cache for upto 24hrs until we regen ht page)
+  // set custom cache age for generated html pages (want to only cache for up to 24hrs until we regenerate the page)
   // nuxt-rerouter should append .html for the pages that need it for finding the page in s3
   if (event.Records[0].cf.request.uri.endsWith('.html')) {
     // pages get regenerated at 12am UTC
     const now = new Date()
-    const maxAge = Math.max(((24 - now.getHours()) * 60 * 60) + ((60 - now.getMinutes()) * 60) + (60 - now.getSeconds()), 1)
+    // only cache for prod
+    // todo: this will have to be updated for other 'prod' domains
+    const isProd = request.origin && request.origin.custom && request.origin.custom?.domainName === 'ammobin.ca'
+    const maxAge = isProd ?
+      Math.max(((24 - now.getHours()) * 60 * 60) + ((60 - now.getMinutes()) * 60) + (60 - now.getSeconds()), 1) :
+      1
     response.headers['cache-control'] = [{
       key: 'Cache-Control',
       value: 'max-age=' + maxAge

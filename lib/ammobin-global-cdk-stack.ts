@@ -46,12 +46,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       code: apiCode,
       handler: 'nuxt-rerouter.handler',
       runtime: lambda.Runtime.NODEJS_10_X,
-      environment: {
-        STAGE: props.stage,
-        SITE: props.publicUrl,
-        NODE_ENV: 'production'
-
-      },
+      environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
       logRetention: LOG_RETENTION,
@@ -62,11 +57,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       code: apiCode,
       handler: 'security-headers.handler',
       runtime: lambda.Runtime.NODEJS_10_X,
-      environment: {
-        STAGE: props.stage,
-        SITE: props.publicUrl,
-        NODE_ENV: 'production'
-      },
+      environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
       logRetention: LOG_RETENTION
@@ -85,10 +76,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     this.nuxtRerouterVersion = nuxtRerouterVersion
 
-    const cfIdentityResource = new cloudfront.CfnCloudFrontOriginAccessIdentity(this, 'siteBucketAccess', {
-      cloudFrontOriginAccessIdentityConfig: {
-        comment: 'let cloudfront access the site bucket'
-      }
+    const originAccessIdentity = new cloudfront.OriginAccessIdentity(this, 'siteBucketAccess', {
+      comment: 'let cloudfront access the site bucket'
     })
 
     // todo: delete this bucket if/when github page alternative is confirmed working
@@ -103,7 +92,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       bucket: siteBucket,
     }).document.addStatements(new PolicyStatement({
       actions: ['s3:GetObject'],
-      principals: [new CanonicalUserPrincipal(cfIdentityResource.attrS3CanonicalUserId)],
+      principals: [new CanonicalUserPrincipal(originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId)],
       resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
     }))
 
@@ -135,14 +124,15 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       ],
       originConfigs: [
         {
-          //   s3OriginSource: {
-          //     s3BucketSource: siteBucket,
-          //     originAccessIdentityId: cfIdentityResource.ref
-          //   },
-          // see https://github.com/ammobinDOTca/s3-bucket
-          customOriginSource: {
+          // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
+          s3OriginSource: props.stage !== 'prod' ? {
+            s3BucketSource: siteBucket,
+            originAccessIdentity
+          } : undefined,
+          customOriginSource: props.stage === 'prod' ? {
+            // see https://github.com/ammobinDOTca/s3-bucket
             domainName: 'client.github.ammobin.ca'
-          },
+          } : undefined,
           behaviors: [
             {
               lambdaFunctionAssociations: [
@@ -162,15 +152,15 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           ],
         },
         {
-          // save a few pennies by not running edge lambda for most of the static assets
-          // s3OriginSource: {
-          //   s3BucketSource: siteBucket,
-          //   originAccessIdentityId: cfIdentityResource.ref
-          // },
-          // see https://github.com/ammobinDOTca/s3-bucket
-          customOriginSource: {
+          // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
+          s3OriginSource: props.stage !== 'prod' ? {
+            s3BucketSource: siteBucket,
+            originAccessIdentity
+          } : undefined,
+          customOriginSource: props.stage === 'prod' ? {
+            // see https://github.com/ammobinDOTca/s3-bucket
             domainName: 'client.github.ammobin.ca'
-          },
+          } : undefined,
           behaviors: [
             {
               pathPattern: '_nuxt/*',
@@ -194,7 +184,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
               cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
               defaultTtl: Duration.days(1),
-              minTtl: Duration.days(1), // incase we ever move to GETs for graphql requests....
+              minTtl: Duration.days(1),
             },
           ],
         },

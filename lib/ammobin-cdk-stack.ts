@@ -61,9 +61,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     })
 
     itemsTable.grantReadData(api.lambda)
-    if (api.graphqlLambda) {
-      itemsTable.grantReadData(api.graphqlLambda)
-    }
+    itemsTable.grantReadData(api.graphqlLambda)
 
     // TODO: manually update this key: https://ca-central-1.console.aws.amazon.com/secretsmanager/home?region=ca-central-1#/secret?name=rendertronUrl
     //https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_update-secret.html
@@ -156,7 +154,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         ES_URL_SECRET_ID: esUrlSecret.secretArn
       },
       logRetention: LOG_RETENTION,
-      description: 'listens to kinesis stream of all log messages, and forwards them to elastic search'
+      description: 'moves logs from cloudwatch to elastic search'
     })
     esUrlSecret.grantRead(logExporter);
 
@@ -164,14 +162,12 @@ export class AmmobinCdkStack extends cdk.Stack {
       workerLambda,
       refresherLambda,
       api.lambda,
-      api.graphqlLambda as any
+      api.graphqlLambda
     ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
-
-
 
   }
 
-  private generateWorker(name, environment, queue, timeout, code, memorySize) {
+  private generateWorker(name: string, environment: { [k: string]: string }, queue: sqs.IQueue, timeout: Duration, code: lambda.Code, memorySize: number): lambda.Function {
 
     const workerLambda = new lambda.Function(this, name, {
       code,
