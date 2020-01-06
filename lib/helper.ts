@@ -4,10 +4,10 @@ import cdk = require('@aws-cdk/core')
 import Lambda = require('@aws-cdk/aws-lambda')
 import * as iam from '@aws-cdk/aws-iam'
 /**
- * generic export all json log messages to lambda (will forward to)
+ *
  * @param stack
- * @param lambda
- * @param kinesis
+ * @param lambda lambda's logs to export
+ * @param logLambda lambda to subscribe to log group and forward logs to elastic search
  */
 export function exportLambdaLogsToLogger(stack: cdk.Stack, lambda: Lambda.Function, logLambda: Lambda.Function): ILogGroup {
   //recreate log group from assumption of auto created lambda log
@@ -15,9 +15,14 @@ export function exportLambdaLogsToLogger(stack: cdk.Stack, lambda: Lambda.Functi
 
   lambda.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: stack.region }))
 
-  const logGroup = new LogGroup(stack, lambda.node.uniqueId + 'Logs', {
-    logGroupName: '/aws/lambda/' + lambda.functionName
-  })
+  const logGroup = LogGroup.fromLogGroupArn(stack, lambda.node.uniqueId + 'Logs', cdk.Arn.format({
+    service: 'logs',
+    resource: 'log-group',
+    sep: ':',
+    resourceName: '/aws/lambda/' + lambda.functionName
+  }, stack))
+  logGroup.node.addDependency(lambda) // need to wait for lambda to exist first
+  logGroup.node.addDependency(logLambda)
   logGroup.addSubscriptionFilter('getAllJson' + lambda.node.uniqueId, {
     filterPattern: {
       logPatternString: '{$.level = "info"}' // all logs should be at this level (want all json logs, no need to export lambda cruff)

@@ -15,7 +15,7 @@ import { exportLambdaLogsToLogger } from './helper'
 import { Secret } from '@aws-cdk/aws-secretsmanager'
 
 import { AmmobinImagesStack } from './ammobin-images-stack'
-
+import * as iam from '@aws-cdk/aws-iam'
 interface IAmmobinCdkStackProps extends cdk.StackProps {
   publicUrl: string,
   stage: Stage
@@ -157,6 +157,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       description: 'moves logs from cloudwatch to elastic search'
     })
     esUrlSecret.grantRead(logExporter);
+    logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: this.region }));
 
     [
       workerLambda,
