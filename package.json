@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc --outDir dist && cp -r log-exporter/node_modules dist/log-exporter/node_modules && cp -r image-proxy/node_modules dist/image-proxy/node_modules",
     "watch": "tsc -w",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "postinstall": "cd image-proxy && npm i && cd .."
   },
   "devDependencies": {
     "@aws-cdk/aws-cloudfront": "^1.19.0",
