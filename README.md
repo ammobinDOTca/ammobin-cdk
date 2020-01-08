@@ -43,6 +43,14 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 
 # open todos
 
+## doc
+
+- beta + prod accounts
+- domain
+- github secret
+  - webhooks
+  - repo commit status (even for public)
+
 ## todo params:
 
 - base domain

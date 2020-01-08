@@ -40,6 +40,7 @@ export class AmmobinApiStack extends cdk.Construct {
       description: `api for api lambda`,
       endpointTypes: [apigateway.EndpointType.EDGE],
       domainName: {
+        // todo move this cert higher up + use wildcard
         certificate: new acm.Certificate(this, props.name + 'Cert', {
           domainName: props.url,
           validationMethod: acm.ValidationMethod.DNS,

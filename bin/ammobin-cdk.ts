@@ -13,10 +13,15 @@ const app = new cdk.App()
 const {
   //siteBucket = 'ammobin-aws-site', // s3 bucket where static assets are uploaded to. this will need to be changed for each setup, bucket names are unique across AWS
   region = 'ca-central-1', // default to canada region
-  publicUrl = 'aws.ammobin.ca', // current base domain of site
+  baseDomain = 'ammobin.ca', // current base domain of site
+  apiCode = '../ammobin-api'
 } = process.env
-
+console.log(apiCode)
 const stage = process.env['stage'] as Stage || 'prod'
+let publicUrl = baseDomain
+if (stage === 'beta') {
+  publicUrl = 'beta.' + baseDomain
+}
 const siteBucket = publicUrl.replace('.', '-')
 
 new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
@@ -34,6 +39,7 @@ new AmmobinCdkStack(app, 'AmmobinCdkStack', {
   },
   publicUrl,
   stage,
+  apiCode
 })
 
 new GrafanaIamStack(app, 'GrafanaIamStack', {
@@ -43,6 +49,12 @@ new GrafanaIamStack(app, 'GrafanaIamStack', {
 })
 
 new AmmobinPipelineStack(app, 'AmmobinPipelineStack', {
+  env: {
+    region
+  }
+})
+
+new AmmobinPipelineStack(app, 'testpipeline', {
   env: {
     region
   }

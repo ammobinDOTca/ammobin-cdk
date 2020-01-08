@@ -18,7 +18,8 @@ import { AmmobinImagesStack } from './ammobin-images-stack'
 import * as iam from '@aws-cdk/aws-iam'
 interface IAmmobinCdkStackProps extends cdk.StackProps {
   publicUrl: string,
-  stage: Stage
+  stage: Stage,
+  apiCode?: string
 }
 
 export class AmmobinCdkStack extends cdk.Stack {
@@ -44,8 +45,8 @@ export class AmmobinCdkStack extends cdk.Stack {
     })
 
     new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage })
-    const CODE_BASE = '../ammobin-api/lambda/'
-
+    const CODE_BASE = (props.apiCode || '../ammobin-api') + '/lambda/'
+    console.log('CODE_BASE', CODE_BASE,props)
     const api = new AmmobinApiStack(this, 'ammobin-api', {
       name: 'apiLambda',
       CODE_BASE,
@@ -138,7 +139,7 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     // manually set the value of this secret once created
     const esUrlSecret = new Secret(this, 'esUrlSecret', {
-      description: 'url with user + pass to send logs to',
+      description: 'url with user + pass to send logs to. should be in the form https://user:password@example.com',
     })
 
     const logExporter = new lambda.Function(this, 'logExporter', {

@@ -13,26 +13,38 @@ export class AmmobinPipelineStack extends Stack {
 
     const apiStackCFTemplate = 'AmmobinCdkStack.template.json'
     const globalStackCFTemplate = 'AmmobinGlobalCdkStack.template.json'
+    const API_SOURCE = 'ammobinApi'
 
     const cdkBuild = new codebuild.PipelineProject(this, 'CdkBuild', {
       buildSpec: codebuild.BuildSpec.fromObject({
         version: '0.2',
         phases: {
           install: {
-            commands: 'npm install',
+            commands: [
+
+              'npm install',
+              `cd $CODEBUILD_SRC_DIR_${API_SOURCE}`,
+              'npm install',
+              'cd $CODEBUILD_SRC_DIR',
+            ]
           },
           build: {
             commands: [
+              `cd $CODEBUILD_SRC_DIR_${API_SOURCE}`,
+              'npm run build-lambda',
+              'cd $CODEBUILD_SRC_DIR',
               'npm run build',
-              'npm run cdk synth'
+              `apiCode=$CODEBUILD_SRC_DIR_${API_SOURCE} npm run cdk synth`
             ],
           },
+          // todo: deploy????
         },
         artifacts: {
           'base-directory': 'cdk.out',
           files: [
             apiStackCFTemplate,
             globalStackCFTemplate,
+            // assets?
           ],
         },
       }),
@@ -40,37 +52,12 @@ export class AmmobinPipelineStack extends Stack {
         buildImage: codebuild.LinuxBuildImage.UBUNTU_14_04_NODEJS_10_14_1
       },
     });
-    // const apiLambdaBuild = new codebuild.PipelineProject(this, 'LambdaBuild', {
-    //   buildSpec: codebuild.BuildSpec.fromObject({
-    //     version: '0.2',
-    //     phases: {
-    //       install: {
-    //         commands: [
-    //           'git clone https://github.com/ammobinDOTca/ammobin-api.git',
-    //           'cd ammobin-api',
-    //           'npm install',
-    //         ],
-    //       },
-    //       build: {
-    //         commands: 'npm run lambda-build',
-    //       },
-    //     },
-    //     artifacts: {
-    //       'base-directory': 'ammobin-api/lambda',
-    //       files: [
-    //         '*.js',
-    //       ],
-    //     },
-    //   }),
-    //   environment: {
-    //     buildImage: codebuild.LinuxBuildImage.UBUNTU_14_04_NODEJS_10_14_1,
-    //   },
-    // });
 
-    const sourceOutput = new codepipeline.Artifact();
+
+    const sourceOutput = new codepipeline.Artifact('ammobinCdk');
+    const apiSourceOutput = new codepipeline.Artifact(API_SOURCE);
     const cdkBuildOutput = new codepipeline.Artifact('CdkBuildOutput');
-    const lambdaBuildOutput = new codepipeline.Artifact('LambdaBuildOutput');
-    const oauthToken = SecretValue.secretsManager('my-github-token');
+    const oauthToken = SecretValue.secretsManager('github-auth-token'); // should manually create beforehand. pipeline wants to make api calls with this token before one has a chance to populate it
 
     new codepipeline.Pipeline(this, 'Pipeline', {
       stages: [
@@ -83,6 +70,13 @@ export class AmmobinPipelineStack extends Stack {
               repo: 'ammobin-cdk',
               oauthToken,
               output: sourceOutput
+            }),
+            new codepipeline_actions.GitHubSourceAction({
+              actionName: 'github_source_api',
+              owner: 'ammobinDOTca',
+              repo: 'ammobin-api',
+              oauthToken,
+              output: apiSourceOutput
             })
           ],
         },
@@ -99,6 +93,9 @@ export class AmmobinPipelineStack extends Stack {
               actionName: 'CDK_Build',
               project: cdkBuild,
               input: sourceOutput,
+              extraInputs: [
+                apiSourceOutput
+              ],
               outputs: [cdkBuildOutput],
             }),
             // 20200105 todo: build client + put in s3 sitebucket for NON-prod...
@@ -108,7 +105,7 @@ export class AmmobinPipelineStack extends Stack {
           stageName: 'DeployProdCA',
           actions: [
             ...[
-              // apiStackCFTemplate, TODO restore
+              // apiStackCFTemplate, TODO restore?
               globalStackCFTemplate
             ].map(s => {
               const stackName = s.split('.')[0]
