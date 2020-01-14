@@ -5,36 +5,37 @@
     "ammobin-cdk": "dist/bin/ammobin-cdk.js"
   },
   "scripts": {
-    "build": "tsc --outDir dist && cp -r log-exporter/node_modules dist/log-exporter/node_modules && cp -r image-proxy/node_modules dist/image-proxy/node_modules",
+    "build:ts": "tsc --outDir dist ",
+    "build": "npm run build:ts && cp -r log-exporter/node_modules dist/log-exporter/node_modules && cp -r image-proxy/node_modules dist/image-proxy/node_modules",
     "watch": "tsc -w",
     "cdk": "cdk",
     "postinstall": "cd image-proxy && npm i && cd .. && cd log-exporter && npm i && cd .."
   },
   "devDependencies": {
-    "@aws-cdk/aws-cloudfront": "^1.19.0",
-    "@aws-cdk/aws-logs-destinations": "^1.19.0",
-    "@aws-cdk/aws-s3": "^1.19.0",
+    "@aws-cdk/aws-cloudfront": "^1.20.0",
+    "@aws-cdk/aws-logs-destinations": "^1.20.0",
+    "@aws-cdk/aws-s3": "^1.20.0",
     "@types/aws-lambda": "^8.10.39",
     "@types/node": "^12.12.24",
-    "aws-cdk": "^1.19.0",
     "sha256-file": "^1.0.0",
-    "ts-node": "^8.5.4",
-    "typescript": "^3.7.4"
+    "ts-node": "^8.6.1",
+    "typescript": "^3.7.4",
+    "@aws-cdk/aws-apigateway": "^1.20.0",
+    "@aws-cdk/aws-codebuild": "^1.20.0",
+    "@aws-cdk/aws-codecommit": "^1.20.0",
+    "@aws-cdk/aws-codepipeline": "^1.20.0",
+    "@aws-cdk/aws-codepipeline-actions": "^1.20.0",
+    "@aws-cdk/aws-dynamodb": "^1.20.0",
+    "@aws-cdk/aws-lambda-event-sources": "^1.20.0",
+    "@aws-cdk/aws-s3-deployment": "^1.20.0",
+    "@aws-cdk/aws-sam": "^1.20.0",
+    "@aws-cdk/aws-secretsmanager": "^1.20.0",
+    "@aws-cdk/aws-sns": "^1.20.0",
+    "@aws-cdk/aws-sns-subscriptions": "^1.20.0",
+    "@aws-cdk/aws-sqs": "^1.20.0",
+    "@aws-cdk/core": "^1.20.0"
   },
   "dependencies": {
-    "@aws-cdk/aws-apigateway": "^1.19.0",
-    "@aws-cdk/aws-codebuild": "^1.19.0",
-    "@aws-cdk/aws-codecommit": "^1.19.0",
-    "@aws-cdk/aws-codepipeline": "^1.19.0",
-    "@aws-cdk/aws-codepipeline-actions": "^1.19.0",
-    "@aws-cdk/aws-dynamodb": "^1.19.0",
-    "@aws-cdk/aws-lambda-event-sources": "^1.19.0",
-    "@aws-cdk/aws-s3-deployment": "^1.19.0",
-    "@aws-cdk/aws-sam": "^1.19.0",
-    "@aws-cdk/aws-secretsmanager": "^1.19.0",
-    "@aws-cdk/aws-sns": "^1.19.0",
-    "@aws-cdk/aws-sns-subscriptions": "^1.19.0",
-    "@aws-cdk/aws-sqs": "^1.19.0",
-    "@aws-cdk/core": "^1.19.0"
+    "aws-cdk": "^1.20.0"
   }
 }

@@ -1,4 +1,4 @@
 {
-  "app": "npx ts-node bin/ammobin-cdk.ts",
+  "app": "node dist/bin/ammobin-cdk.js",
   "requireApproval": "never"
 }
