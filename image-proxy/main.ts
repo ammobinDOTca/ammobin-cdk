@@ -49,13 +49,13 @@ async function resizeImage(url: string, width: number): Promise<{ contentType: s
 export async function handler(event: APIGatewayEvent) {
   console.log(JSON.stringify(event))
 
-  const { referrer } = event.headers;
-
-  if (referrer && !['ammobin.ca', 'localhost', '127.0.0.1'].some(allowedDomain =>
-    referrer.endsWith(allowedDomain))) {
+  const { Referrer } = event.headers;
+  //todo: make this configurable....
+  if (Referrer && !['ammobin.ca', 'localhost', '127.0.0.1'].some(allowedDomain =>
+    Referrer.endsWith(allowedDomain))) {
     return <APIGatewayProxyResult>{
       statusCode: 403,
-      body: `${referrer} is not allowed to load images`
+      body: `${Referrer} is not allowed to load images`
     }
   }
 
@@ -75,7 +75,8 @@ export async function handler(event: APIGatewayEvent) {
     return <APIGatewayProxyResult>{
       statusCode: 200,
       headers: {
-        'Content-Type': contentType
+        'Content-Type': contentType,
+        'Cache-Control': 'max-age=31536000'
       },
       body,
       isBase64Encoded: true
