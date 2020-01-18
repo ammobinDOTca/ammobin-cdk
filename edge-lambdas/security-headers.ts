@@ -30,9 +30,10 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
     const now = new Date()
     // only cache for prod
     // todo: this will have to be updated for other 'prod' domains
-    const isProd = request.origin && request.origin.custom && request.origin.custom?.domainName === 'ammobin.ca'
+    const isProd = request.origin?.custom?.domainName === 'ammobin.ca'
+    console.log(`isProd ${isProd} for ${request.origin?.custom?.domainName}`)
     const maxAge = isProd ?
-      Math.max(((24 - now.getHours()) * 60 * 60) + ((60 - now.getMinutes()) * 60) + (60 - now.getSeconds()), 1) :
+      Math.max(((24 - now.getUTCHours()) * 60 * 60) + ((60 - now.getUTCMinutes()) * 60) + (60 - now.getUTCSeconds()), 2) :
       1
     response.headers['cache-control'] = [{
       key: 'Cache-Control',
