@@ -6,22 +6,26 @@ ammobin.ca rebuilt on AWS serverless technologies using AWS-CDK
 
 # setup
 
-- create aws account + configure cli (set region to ca-central-1)
+- create aws account + configure cli (set region to ca-central-1) + create profiles for each region + stage
 - install node 12 + cdk
 
 ```
 export publicUrl=<your site domain aka ammobin.ca>
 npm run build
+
+(for each region + stage)
 cdk bootstrap
-cdk deploy AmmobinCdkStack
-cdk deploy AmmobinGlobalCdkStack
-cdk deploy s3UploadStack (optional)
+cdk deploy IamStack
 cdk deploy GrafanaIamStack (optional)
+
+cdk deploy AmmobinPipeline
+(get all AGW + CF resources)
+cdk deploy Route53
 ```
 
 ### undocumented work:
 
-- custom name DNS validation
+- custom name DNS validation (route53 needs its own stack in root)
   - copy down acm dns validation check from build output
   - set up cname from api.<BASE DOMAIN> to 'Target Domain Name' from custom domains tab on api gateway. set a short TTL on it (for easier turn around time debugging if things go wrong))
 - daily nuxt generate + s3 upload -> github pages + actions (see https://github.com/ammobinDOTca/s3-bucket/blob/master/.github/workflows/main.yml)
@@ -43,6 +47,10 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 
 # open todos
 
+finish pipeline
+do route53 stack
+revisit cache headers
+
 ## doc
 
 - beta + prod accounts
@@ -53,9 +61,8 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 
 ## todo params:
 
-- base domain
-- aws region (hardcoded to ca-central-1)
-- site bucket needs to be configurable
+- accounts
+- route53 config
 
 ## todo code:
 

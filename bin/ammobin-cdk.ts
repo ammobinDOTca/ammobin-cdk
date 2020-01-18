@@ -3,7 +3,7 @@ import cdk = require('@aws-cdk/core')
 import { AmmobinCdkStack } from '../lib/ammobin-cdk-stack'
 import { AmmobinGlobalCdkStack } from '../lib/ammobin-global-cdk-stack'
 import { AmmobinPipelineStack } from '../lib/ammobin-pipeline-stack'
-import { GrafanaIamStack } from '../lib/grafana-iam-stack'
+import { IamStack } from '../lib/grafana-iam-stack'
 import { s3UploadStack } from '../lib/s3-upload-stack'
 import { Stage } from '../lib/constants'
 
@@ -16,13 +16,13 @@ const {
   baseDomain = 'ammobin.ca', // current base domain of site
   apiCode = '../ammobin-api'
 } = process.env
-console.log(apiCode)
+
 const stage = process.env['stage'] as Stage || 'prod'
 let publicUrl = baseDomain
 if (stage === 'beta') {
   publicUrl = 'beta.' + baseDomain
 }
-const siteBucket = publicUrl.replace('.', '-')
+const siteBucket = publicUrl.replace(/\./gi, '-')
 
 new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   env: {
@@ -42,22 +42,29 @@ new AmmobinCdkStack(app, 'AmmobinCdkStack', {
   apiCode
 })
 
-new GrafanaIamStack(app, 'GrafanaIamStack', {
+/**
+ * todo all these need to be params....
+ */
+const rootAccount = '123123123' // where route53 + pipeline exist
+const caBetaAWSAccountId = '123123123' // beta ca
+const caProdAWSAccountId = '123123123' // beta ca
+
+new IamStack(app, 'IamStack', {
   env: {
     region,
   },
+  stage,
+  deployingAccount: rootAccount,
+  region: 'CA'
 })
 
 new AmmobinPipelineStack(app, 'AmmobinPipelineStack', {
   env: {
-    region
-  }
-})
-
-new AmmobinPipelineStack(app, 'testpipeline', {
-  env: {
-    region
-  }
+    region,
+    account: rootAccount // only deploy to root account
+  },
+  caBetaAWSAccountId,
+  caProdAWSAccountId
 })
 
 new s3UploadStack(app, 's3UploadStack', {

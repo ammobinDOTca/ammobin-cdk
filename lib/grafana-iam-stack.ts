@@ -1,9 +1,33 @@
 import cdk = require('@aws-cdk/core')
 import iam = require('@aws-cdk/aws-iam')
+import { PolicyStatement, Effect } from '@aws-cdk/aws-iam'
 
-export class GrafanaIamStack extends cdk.Stack {
+import { serviceName, Stage, Region } from './constants'
+import { CrossAccountDeploymentRole } from './CrossAccountDeploymentRole'
 
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+interface props extends cdk.StackProps {
+  /**
+   * stage
+   */
+  stage: Stage
+  /**
+   * aws account id that the root pipeline is hosted in
+   * (ie: the account that will need to assume the deploy stack role in this account)
+   */
+  deployingAccount: string
+
+  /**
+   * region that this stack will represent
+   */
+  region: Region
+}
+
+/**
+ * collection
+ */
+export class IamStack extends cdk.Stack {
+
+  constructor(scope: cdk.App, id: string, props: props) {
     super(scope, id, props)
 
     // https://grafana.com/docs/features/datasources/cloudwatch/
@@ -36,5 +60,21 @@ export class GrafanaIamStack extends cdk.Stack {
       ],
       resources: ['*']
     }))
+
+    new CrossAccountDeploymentRole(this, 'deployRole', {
+      targetStageName: props.stage,
+      targetRegionName: props.region,
+      serviceName,
+      deployingAccountId: props.deployingAccount,
+      deployPermissions: [
+        new PolicyStatement({
+          actions: [
+            '*', // todo: restrict this to only what is needed for deploying the stacks....
+          ],
+          effect: Effect.ALLOW,
+          resources: ['*']
+        })
+      ]
+    })
   }
 }
