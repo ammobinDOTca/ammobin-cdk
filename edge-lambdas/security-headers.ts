@@ -29,8 +29,8 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
     // pages get regenerated at 12am UTC
     const now = new Date()
     // only cache for prod
-    // todo: this will have to be updated for other 'prod' domains
-    const isProd = request.origin?.custom?.domainName === 'ammobin.ca'
+    // todo: this will have to be updated if more stages are created....
+    const isProd = !request.origin?.custom?.domainName.includes('beta')
     console.log(`isProd ${isProd} for ${request.origin?.custom?.domainName}`)
     const maxAge = isProd ?
       Math.max(((24 - now.getUTCHours()) * 60 * 60) + ((60 - now.getUTCMinutes()) * 60) + (60 - now.getUTCSeconds()), 2) :
