@@ -184,7 +184,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
               cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
               defaultTtl: Duration.days(1),
-              minTtl: Duration.days(1),
+              minTtl: Duration.minutes(30),
             },
           ],
         },
