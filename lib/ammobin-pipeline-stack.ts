@@ -33,6 +33,7 @@ export class AmmobinPipelineStack extends Stack {
 
     // role used in beta account to deploy stack there
     const betaDeployRole = iam.Role.fromRoleArn(this, 'deployBetaRole', CrossAccountDeploymentRole.getRoleArnForService(serviceName, 'beta', 'CA', props.caBetaAWSAccountId))
+    const prodDeployRole = iam.Role.fromRoleArn(this, 'prodDeployRole', CrossAccountDeploymentRole.getRoleArnForService(serviceName, 'prod', 'CA', props.caProdAWSAccountId))
 
     // role used by the pipeline itself
     const pipelineRole = new iam.Role(this, 'pipelineRole', {
@@ -47,7 +48,8 @@ export class AmmobinPipelineStack extends Stack {
     pipelineDeployToBetaAccountRole.addToPolicy(new iam.PolicyStatement({
       actions: ['sts:AssumeRole'],
       resources: [
-        betaDeployRole.roleArn
+        betaDeployRole.roleArn,
+        prodDeployRole.roleArn,
       ]
     }))
 
@@ -144,6 +146,9 @@ export class AmmobinPipelineStack extends Stack {
     const cdkDeployCloudFront = generateDeployToAccountBuild('deployCloudFront', betaDeployRole.roleArn, 'beta', 'CA', 'AmmobinGlobalCdkStack')
     const cdkDeployApi = generateDeployToAccountBuild('deployApi', betaDeployRole.roleArn, 'beta', 'CA', 'AmmobinCdkStack')
 
+    const cdkDeployProdCloudFront = generateDeployToAccountBuild('deployCloudFront', prodDeployRole.roleArn, 'prod', 'CA', 'AmmobinGlobalCdkStack')
+    const cdkDeployProdApi = generateDeployToAccountBuild('deployApi', prodDeployRole.roleArn, 'prod', 'CA', 'AmmobinCdkStack')
+
 
     const sourceOutput = new codepipeline.Artifact('ammobinCdk');
     const apiSourceOutput = new codepipeline.Artifact(API_SOURCE);
@@ -162,9 +167,7 @@ export class AmmobinPipelineStack extends Stack {
     }))
 
 
-
     const oauthToken = SecretValue.secretsManager('github-auth-token'); // should manually create beforehand. pipeline wants to make api calls with this token before one has a chance to populate it
-
 
     const pipeline = new codepipeline.Pipeline(this, 'Pipeline', {
       role: pipelineRole,
@@ -223,6 +226,32 @@ export class AmmobinPipelineStack extends Stack {
             new codepipeline_actions.CodeBuildAction({
               actionName: 'cdkDeployCloudFront',
               project: cdkDeployCloudFront,
+              input: cdkBuildOutput,
+              extraInputs: [
+                apiBuildOutput
+              ],
+              outputs: [],
+            }),
+            // todo: run test command after deploying....
+            // should test page reachable, main page loads, can goto listing page, can do basic filter, can load filter page directly
+          ],
+        },
+        {
+          stageName: 'DeployProdCA',
+          actions: [
+            new codepipeline_actions.CodeBuildAction({
+              actionName: 'cdkDeployApi',
+              project: cdkDeployProdApi,
+              input: cdkBuildOutput,
+              extraInputs: [
+                apiBuildOutput
+              ],
+              outputs: [],
+            }),
+
+            new codepipeline_actions.CodeBuildAction({
+              actionName: 'cdkDeployCloudFront',
+              project: cdkDeployProdCloudFront,
               input: cdkBuildOutput,
               extraInputs: [
                 apiBuildOutput
