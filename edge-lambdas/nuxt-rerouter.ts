@@ -24,8 +24,13 @@ export function handler(event: CloudFrontRequestEvent, context: Context, cb: Cal
       if (query['subType']) {
         request.uri += '/' + query['subType']
         // todo: make 3XX redirect instead?
+      } else if (query['calibre']) {
+        request.uri += '/' + query['calibre']
+
       }
     }
+    request.uri += '.html'
+
 
   }
   cb(null, request)
