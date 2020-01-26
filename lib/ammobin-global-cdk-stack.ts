@@ -151,6 +151,9 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                   lambdaFunction: securityHeadersVersion
                 },
               ],
+              forwardedValues: {
+                queryString: true, // need to be able to redirect old urls to new ones
+              },
               isDefaultBehavior: true,
               defaultTtl: Duration.days(365),
               minTtl: Duration.days(1), // want to make sure that updated pages get sent (refreshing once a day now)
@@ -235,7 +238,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           metric: new Metric({
             namespace: 'AWS/CloudFront',
             metricName: 'Requests',
-            region: 'global',
+            region: this.region,
             statistic: 'sum',
             period: Duration.minutes(5),
             dimensions: {
@@ -247,7 +250,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD
         })
 
-        lowTrafficAlarm.addAlarmAction(new SnsAction(emailMe as any) as any)
+        lowTrafficAlarm.addAlarmAction(new SnsAction(emailMe))
       }
     }
   }
