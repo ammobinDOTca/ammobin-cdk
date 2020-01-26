@@ -14,7 +14,8 @@ const {
   //siteBucket = 'ammobin-aws-site', // s3 bucket where static assets are uploaded to. this will need to be changed for each setup, bucket names are unique across AWS
   region = 'ca-central-1', // default to canada region
   baseDomain = 'ammobin.ca', // current base domain of site
-  apiCode = '../ammobin-api'
+  apiCode = '../ammobin-api',
+  email = 'contact' + '@ammobin.ca' // email to send alarms to
 } = process.env
 
 const stage = process.env['stage'] as Stage || 'prod'
@@ -30,7 +31,8 @@ new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   },
   publicUrl,
   siteBucket,
-  stage
+  stage,
+  email
 })
 
 new AmmobinCdkStack(app, 'AmmobinCdkStack', {
@@ -39,7 +41,8 @@ new AmmobinCdkStack(app, 'AmmobinCdkStack', {
   },
   publicUrl,
   stage,
-  apiCode
+  apiCode,
+  email
 })
 
 /**

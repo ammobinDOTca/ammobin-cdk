@@ -262,8 +262,10 @@ export class AmmobinPipelineStack extends Stack {
             // should test page reachable, main page loads, can goto listing page, can do basic filter, can load filter page directly
           ],
         },
-        // TODO add prod stage
       ],
     })
+
+    // todo add billing alarms....
+    // todo configure pipeline notification
   }
 }

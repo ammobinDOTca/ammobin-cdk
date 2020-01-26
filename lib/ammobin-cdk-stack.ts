@@ -2,24 +2,29 @@ import lambda = require('@aws-cdk/aws-lambda')
 import cdk = require('@aws-cdk/core')
 import dynamodb = require('@aws-cdk/aws-dynamodb')
 import sqs = require('@aws-cdk/aws-sqs')
-import { SqsEventSource, KinesisEventSource, StreamEventSource } from '@aws-cdk/aws-lambda-event-sources'
-import { AmmobinApiStack } from './ammobin-api-stack'
-import { LOG_RETENTION, Stage } from './constants'
+import { SqsEventSource, } from '@aws-cdk/aws-lambda-event-sources'
 import { Duration } from '@aws-cdk/core'
 import events = require('@aws-cdk/aws-events')
 import sm = require('@aws-cdk/aws-secretsmanager')
-import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { RetentionDays } from '@aws-cdk/aws-logs'
-
-import { exportLambdaLogsToLogger } from './helper'
 import { Secret } from '@aws-cdk/aws-secretsmanager'
-
-import { AmmobinImagesStack } from './ammobin-images-stack'
 import * as iam from '@aws-cdk/aws-iam'
+import { Alarm, Metric, ComparisonOperator, TreatMissingData } from '@aws-cdk/aws-cloudwatch'
+import { SnsAction } from '@aws-cdk/aws-cloudwatch-actions'
+import { Topic, } from '@aws-cdk/aws-sns'
+import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
+
+import { AmmobinApiStack } from './ammobin-api-stack'
+import { LOG_RETENTION, Stage } from './constants'
+import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
+import { exportLambdaLogsToLogger } from './helper'
+import { AmmobinImagesStack } from './ammobin-images-stack'
+
 interface IAmmobinCdkStackProps extends cdk.StackProps {
   publicUrl: string,
   stage: Stage,
-  apiCode?: string
+  apiCode?: string,
+  email?: string
 }
 
 export class AmmobinCdkStack extends cdk.Stack {
@@ -46,9 +51,10 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage })
     const CODE_BASE = (props.apiCode || '../ammobin-api') + '/lambda/'
-    console.log('CODE_BASE', CODE_BASE,props)
+    console.log('CODE_BASE', CODE_BASE, props)
+    const apiName = 'apiLambda'
     const api = new AmmobinApiStack(this, 'ammobin-api', {
-      name: 'apiLambda',
+      name: apiName,
       CODE_BASE,
       url: 'api.' + props.publicUrl,
       environment: {
@@ -166,6 +172,78 @@ export class AmmobinCdkStack extends cdk.Stack {
       api.lambda,
       api.graphqlLambda
     ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
+
+
+    if (props.email) {
+      const emailMe = new Topic(this, 'emailMeTopic')
+
+      emailMe.addSubscription(new EmailSubscription(props.email))
+      // alarms
+      const al5xx = new Alarm(this, 'api5xxErrors', {
+        datapointsToAlarm: 5,
+        evaluationPeriods: 5,
+        metric: new Metric({
+          metricName: '5XXError',
+          namespace: 'AWS/ApiGateway',
+          statistic: 'Sum',
+          region: this.region,
+          period: Duration.minutes(5),
+          dimensions: {
+            ApiName: apiName
+          }
+        }),
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        threshold: 5,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD
+      })
+
+      al5xx.addAlarmAction(new SnsAction(emailMe))
+
+      const al4xx = new Alarm(this, 'api4xxErrors', {
+        datapointsToAlarm: 5,
+        evaluationPeriods: 5,
+        metric: new Metric({
+          metricName: '4XXError',
+          namespace: 'AWS/ApiGateway',
+          statistic: 'Sum',
+          region: this.region,
+          period: Duration.minutes(5),
+          dimensions: {
+            ApiName: apiName
+          }
+        }),
+        treatMissingData: TreatMissingData.NOT_BREACHING,
+        threshold: 15,
+        comparisonOperator: ComparisonOperator.GREATER_THAN_THRESHOLD
+      })
+
+      al4xx.addAlarmAction(new SnsAction(emailMe))
+
+      // only alarm on low traffic on prod....
+      if (props.stage === 'prod') {
+        // alarms
+        const lowTrafficAlarm = new Alarm(this, 'lowTrafficCloudFront', {
+          datapointsToAlarm: 5,
+          evaluationPeriods: 5,
+          metric: new Metric({
+            namespace: 'AWS/ApiGateway',
+            metricName: 'Count',
+            region: this.region,
+            statistic: 'Sum',
+            period: Duration.minutes(5),
+            dimensions: {
+              ApiName: apiName
+            }
+          }),
+          treatMissingData: TreatMissingData.BREACHING,
+          threshold: 1,
+          comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD
+        })
+
+        lowTrafficAlarm.addAlarmAction(new SnsAction(emailMe))
+      }
+    }
+
 
   }
 

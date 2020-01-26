@@ -4,16 +4,22 @@ import lambda = require('@aws-cdk/aws-lambda')
 import iam = require('@aws-cdk/aws-iam')
 import { LOG_RETENTION, Stage } from './constants'
 import { Duration } from '@aws-cdk/core'
-
+import { Alarm, Metric, ComparisonOperator, TreatMissingData } from '@aws-cdk/aws-cloudwatch'
+import { SnsAction } from '@aws-cdk/aws-cloudwatch-actions'
+import { Topic, } from '@aws-cdk/aws-sns'
+import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
+import { PolicyStatement, CanonicalUserPrincipal } from '@aws-cdk/aws-iam'
 import s3 = require('@aws-cdk/aws-s3')
 import cloudfront = require('@aws-cdk/aws-cloudfront')
+
 import sha256 = require('sha256-file')
-import { PolicyStatement, CanonicalUserPrincipal } from '@aws-cdk/aws-iam'
+
 
 interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
   publicUrl: string,
   siteBucket: string,
-  stage: Stage
+  stage: Stage,
+  email?: string
 }
 
 export class AmmobinGlobalCdkStack extends cdk.Stack {
@@ -214,5 +220,35 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'nuxtRerouterArnWithVersion', {
       value: cdk.Fn.join(':', [nuxtRerouter.functionArn, nuxtRerouterVersion.version]),
     })
+
+    if (props.email) {
+      const emailMe = new Topic(this, 'emailMeTopic')
+
+      emailMe.addSubscription(new EmailSubscription(props.email))
+
+      // only alarm on low traffic on prod....
+      if (props.stage === 'prod') {
+        // alarms
+        const lowTrafficAlarm = new Alarm(this, 'lowTrafficCloudFront', {
+          datapointsToAlarm: 5,
+          evaluationPeriods: 5,
+          metric: new Metric({
+            namespace: 'AWS/CloudFront',
+            metricName: 'Requests',
+            region: 'global',
+            statistic: 'sum',
+            period: Duration.minutes(5),
+            dimensions: {
+              DistributionId: distribution.distributionId
+            }
+          }),
+          treatMissingData: TreatMissingData.BREACHING,
+          threshold: 1,
+          comparisonOperator: ComparisonOperator.LESS_THAN_THRESHOLD
+        })
+
+        lowTrafficAlarm.addAlarmAction(new SnsAction(emailMe as any) as any)
+      }
+    }
   }
 }
