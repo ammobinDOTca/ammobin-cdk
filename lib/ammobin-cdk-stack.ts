@@ -222,7 +222,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       // only alarm on low traffic on prod....
       if (props.stage === 'prod') {
         // alarms
-        const lowTrafficAlarm = new Alarm(this, 'lowTrafficCloudFront', {
+        const lowTrafficAlarm = new Alarm(this, 'lowTrafficApi', {
           datapointsToAlarm: 5,
           evaluationPeriods: 5,
           metric: new Metric({

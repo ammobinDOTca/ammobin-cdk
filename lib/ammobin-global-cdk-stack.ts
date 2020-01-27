@@ -242,7 +242,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             statistic: 'sum',
             period: Duration.minutes(5),
             dimensions: {
-              DistributionId: distribution.distributionId
+              DistributionId: distribution.distributionId,
+              Region: 'Global'
             }
           }),
           treatMissingData: TreatMissingData.BREACHING,
