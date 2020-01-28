@@ -40,6 +40,7 @@ export class AmmobinPipelineStack extends Stack {
 
 
     const prodDeployRole = iam.Role.fromRoleArn(this, 'prodDeployRole', CrossAccountDeploymentRoles.getDeployRoleArnForService(serviceName, 'prod', 'CA', props.caProdAWSAccountId))
+    const prodTestInvokeRole = iam.Role.fromRoleArn(this, 'prodTestInvokeRole', CrossAccountDeploymentRoles.getTestRoleArnForService(serviceName, 'prod', 'CA', props.caProdAWSAccountId))
 
     // role used by the pipeline itself
     const pipelineRole = new iam.Role(this, 'pipelineRole', {
@@ -253,8 +254,7 @@ export class AmmobinPipelineStack extends Stack {
               }).function,
               runOrder: 2,
             })
-            // todo: run test command after deploying....
-            // should test page reachable, main page loads, can goto listing page, can do basic filter, can load filter page directly
+
           ],
         },
         {
@@ -268,6 +268,7 @@ export class AmmobinPipelineStack extends Stack {
                 apiBuildOutput
               ],
               outputs: [],
+              runOrder: 1
             }),
 
             new codepipeline_actions.CodeBuildAction({
@@ -278,9 +279,21 @@ export class AmmobinPipelineStack extends Stack {
                 apiBuildOutput
               ],
               outputs: [],
+              runOrder: 1
             }),
-            // todo: run test command after deploying....
-            // should test page reachable, main page loads, can goto listing page, can do basic filter, can load filter page directly
+            new codepipeline_actions.LambdaInvokeAction({
+              actionName: 'prodCAIntegTests',
+              userParameters: {
+                stage: 'prod', region: 'CA'
+              },
+              lambda: new PipelineLambdaInvoker(this, 'prodCAIntegTests', {
+                role: prodTestInvokeRole as iam.Role,
+                targetAccount: props.caProdAWSAccountId,
+                base: 'https://ammobin.ca'
+              }).function,
+              runOrder: 2,
+            })
+
           ],
         },
       ],

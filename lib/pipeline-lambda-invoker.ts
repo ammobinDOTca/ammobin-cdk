@@ -41,7 +41,7 @@ export class PipelineLambdaInvoker extends Construct {
       ]
     }))
 
-    this.function = new Function(scope, 'pipelineCrossAccountInvoker', {
+    this.function = new Function(scope, 'pipeline' + props.targetAccount + 'TestInvoker', {
       role: lambdaAssumeRole,
       runtime: Runtime.NODEJS_12_X,
       timeout: Duration.minutes(5),
