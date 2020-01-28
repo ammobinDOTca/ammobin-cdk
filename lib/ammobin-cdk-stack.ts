@@ -15,7 +15,7 @@ import { Topic, } from '@aws-cdk/aws-sns'
 import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
 
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { LOG_RETENTION, Stage } from './constants'
+import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME } from './constants'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { exportLambdaLogsToLogger } from './helper'
 import { AmmobinImagesStack } from './ammobin-images-stack'
@@ -166,11 +166,22 @@ export class AmmobinCdkStack extends cdk.Stack {
     esUrlSecret.grantRead(logExporter);
     logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: this.region }));
 
+    const testLambda = new lambda.Function(this, 'testLambda', {
+      functionName: TEST_LAMBDA_NAME,
+      runtime: lambda.Runtime.NODEJS_12_X,
+      timeout: Duration.minutes(2),
+      code: new lambda.AssetCode(CODE_BASE + 'test'),
+      handler: 'test.handler',
+      logRetention: LOG_RETENTION,
+      description: 'runs series of integ tests to make sure that nothing broke in the latest deployment'
+    });
+
     [
       workerLambda,
       refresherLambda,
       api.lambda,
-      api.graphqlLambda
+      api.graphqlLambda,
+      testLambda
     ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
 
 
