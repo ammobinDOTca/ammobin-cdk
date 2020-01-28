@@ -8,3 +8,4 @@ export declare type Region = 'CA'
 
 export const serviceName = 'ammobin'
 
+export const TEST_LAMBDA_NAME = 'ammobinIntegTest'

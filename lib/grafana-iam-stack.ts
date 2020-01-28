@@ -3,7 +3,7 @@ import iam = require('@aws-cdk/aws-iam')
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam'
 
 import { serviceName, Stage, Region } from './constants'
-import { CrossAccountDeploymentRole } from './CrossAccountDeploymentRole'
+import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole'
 
 interface props extends cdk.StackProps {
   /**
@@ -61,7 +61,7 @@ export class IamStack extends cdk.Stack {
       resources: ['*']
     }))
 
-    new CrossAccountDeploymentRole(this, 'deployRole', {
+    new CrossAccountDeploymentRoles(this, 'deployRole', {
       targetStageName: props.stage,
       targetRegionName: props.region,
       serviceName,

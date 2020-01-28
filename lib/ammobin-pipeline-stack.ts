@@ -1,12 +1,14 @@
 import codebuild = require('@aws-cdk/aws-codebuild');
 import codepipeline = require('@aws-cdk/aws-codepipeline');
 import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
-import { App, Stack, StackProps, SecretValue } from '@aws-cdk/core';
+import { App, Stack, StackProps, SecretValue, Arn } from '@aws-cdk/core';
 import iam = require('@aws-cdk/aws-iam')
 import { Bucket } from '@aws-cdk/aws-s3'
+import { Function } from '@aws-cdk/aws-lambda'
 
-import { CrossAccountDeploymentRole } from './CrossAccountDeploymentRole';
-import { serviceName, Stage, Region } from './constants';
+import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole';
+import { serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants';
+import { PipelineLambdaInvoker } from './pipeline-lambda-invoker';
 
 export interface PipelineStackProps extends StackProps {
   /**
@@ -32,8 +34,12 @@ export class AmmobinPipelineStack extends Stack {
     const API_BUILD_OUT = 'ApiBuildOutput'
 
     // role used in beta account to deploy stack there
-    const betaDeployRole = iam.Role.fromRoleArn(this, 'deployBetaRole', CrossAccountDeploymentRole.getRoleArnForService(serviceName, 'beta', 'CA', props.caBetaAWSAccountId))
-    const prodDeployRole = iam.Role.fromRoleArn(this, 'prodDeployRole', CrossAccountDeploymentRole.getRoleArnForService(serviceName, 'prod', 'CA', props.caProdAWSAccountId))
+    const betaDeployRole = iam.Role.fromRoleArn(this, 'deployBetaRole', CrossAccountDeploymentRoles.getDeployRoleArnForService(serviceName, 'beta', 'CA', props.caBetaAWSAccountId))
+
+    const betaTestInvokeRole = iam.Role.fromRoleArn(this, 'testInvokeBetaRole', CrossAccountDeploymentRoles.getTestRoleArnForService(serviceName, 'beta', 'CA', props.caBetaAWSAccountId))
+
+
+    const prodDeployRole = iam.Role.fromRoleArn(this, 'prodDeployRole', CrossAccountDeploymentRoles.getDeployRoleArnForService(serviceName, 'prod', 'CA', props.caProdAWSAccountId))
 
     // role used by the pipeline itself
     const pipelineRole = new iam.Role(this, 'pipelineRole', {
@@ -221,6 +227,7 @@ export class AmmobinPipelineStack extends Stack {
                 apiBuildOutput
               ],
               outputs: [],
+              runOrder: 1
             }),
 
             new codepipeline_actions.CodeBuildAction({
@@ -231,7 +238,21 @@ export class AmmobinPipelineStack extends Stack {
                 apiBuildOutput
               ],
               outputs: [],
+              runOrder: 1
             }),
+
+            new codepipeline_actions.LambdaInvokeAction({
+              actionName: 'betaCAIntegTests',
+              userParameters: {
+                stage: 'beta', region: 'CA'
+              },
+              lambda: new PipelineLambdaInvoker(this, 'betaCAIntegTests', {
+                role: betaTestInvokeRole as iam.Role,
+                targetAccount: props.caBetaAWSAccountId,
+                base: 'https://beta.ammobin.ca'
+              }).function,
+              runOrder: 2,
+            })
             // todo: run test command after deploying....
             // should test page reachable, main page loads, can goto listing page, can do basic filter, can load filter page directly
           ],

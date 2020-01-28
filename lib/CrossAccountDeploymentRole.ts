@@ -1,6 +1,6 @@
-import { Construct } from '@aws-cdk/core';
-import { PolicyStatement, Role, AccountPrincipal, Policy, Effect } from '@aws-cdk/aws-iam'
-import { Region, Stage } from './constants';
+import { Construct, Arn } from '@aws-cdk/core';
+import { PolicyStatement, Role, AccountPrincipal, Policy, Effect, ManagedPolicy } from '@aws-cdk/aws-iam'
+import { Region, Stage, TEST_LAMBDA_NAME } from './constants';
 
 export interface CrossAccountDeploymentRoleProps {
   /**
@@ -22,22 +22,39 @@ export interface CrossAccountDeploymentRoleProps {
 /**
  * Creates an IAM role to allow for cross-account deployment of a service's resources.
  */
-export class CrossAccountDeploymentRole extends Construct {
-  public static getRoleNameForService(serviceName: string, stage: Stage, region: Region): string {
+export class CrossAccountDeploymentRoles extends Construct {
+  public static getDeployRoleNameForService(serviceName: string, stage: Stage, region: Region): string {
     return `${serviceName}-${stage}-${region}-deployer-role`;
   }
 
-  public static getRoleArnForService(serviceName: string, stage: Stage, region: Region, accountId: string): string {
-    return `arn:aws:iam::${accountId}:role/${CrossAccountDeploymentRole.getRoleNameForService(serviceName, stage, region)}`;
+  public static getDeployRoleArnForService(serviceName: string, stage: Stage, region: Region, accountId: string): string {
+    return `arn:aws:iam::${accountId}:role/${CrossAccountDeploymentRoles.getDeployRoleNameForService(serviceName, stage, region)}`;
+  }
+
+  public static getTestRoleNameForService(serviceName: string, stage: Stage, region: Region): string {
+    return `${serviceName}-${stage}-${region}-test-invoke-role`;
+  }
+
+  public static getTestRoleArnForService(serviceName: string, stage: Stage, region: Region, accountId: string): string {
+    return `arn:aws:iam::${accountId}:role/${CrossAccountDeploymentRoles.getTestRoleNameForService(serviceName, stage, region)}`;
   }
 
   readonly deployerRole: Role;
   readonly deployerPolicy: Policy;
   readonly roleName: string;
 
+  readonly testInvokeRole: Role;
+  readonly testInvokePolicy: Policy;
+  readonly testInvokeRoleName: string;
+
   public constructor(parent: Construct, id: string, props: CrossAccountDeploymentRoleProps) {
     super(parent, id);
-    this.roleName = CrossAccountDeploymentRole.getRoleNameForService(props.serviceName, props.targetStageName, props.targetRegionName);
+    /**
+     *
+     * pipeline deploy role
+     *
+     */
+    this.roleName = CrossAccountDeploymentRoles.getDeployRoleNameForService(props.serviceName, props.targetStageName, props.targetRegionName);
     // Cross-account assume role
     // https://awslabs.github.io/aws-cdk/refs/_aws-cdk_aws-iam.html#configuring-an-externalid
     this.deployerRole = new Role(this, 'deployerRole', {
@@ -59,5 +76,34 @@ export class CrossAccountDeploymentRole extends Construct {
       statements: [passrole, ...props.deployPermissions],
     });
     this.deployerPolicy.attachToRole(this.deployerRole);
+
+    /**
+     *
+     * pipeline test lambda invoke
+     *
+     */
+
+    this.testInvokeRoleName = CrossAccountDeploymentRoles.getTestRoleNameForService(props.serviceName, props.targetStageName, props.targetRegionName);
+    this.testInvokeRole = new Role(this, 'testInvokeRole', {
+      roleName: this.testInvokeRoleName,
+      assumedBy: new AccountPrincipal(props.deployingAccountId),
+    });
+    this.testInvokeRole.addManagedPolicy(ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'))
+
+    this.testInvokePolicy = new Policy(this, 'testInvokePolicy', {
+      policyName: `${this.testInvokeRoleName}-policy`,
+      statements: [
+        new PolicyStatement({
+          actions: ['lambda:InvokeFunction'],
+          resources: [
+            // `arn:aws:lambda:ca-central-1:*:function:${TEST_LAMBDA_NAME}`
+            '*'
+          ]
+        })
+      ],
+
+    });
+
+    this.testInvokePolicy.attachToRole(this.testInvokeRole)
   }
 }
