@@ -6,7 +6,7 @@
   },
   "scripts": {
     "build:ts": "tsc --outDir dist ",
-    "build": "npm run build:ts && cp -r log-exporter/node_modules dist/log-exporter/node_modules && cp -r image-proxy/node_modules dist/image-proxy/node_modules",
+    "build": "npm run build:ts && cp -r lambdas/log-exporter/node_modules dist/lambdas/log-exporter/node_modules && cp -r lambdas/image-proxy/node_modules dist/lambdas/image-proxy/node_modules",
     "watch": "tsc -w",
     "cdk": "cdk",
     "postinstall": "cd image-proxy && npm i && cd .. && cd log-exporter && npm i && cd .."

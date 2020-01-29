@@ -25,7 +25,7 @@ export class AmmobinImagesStack extends cdk.Construct {
       }
     })
 
-    const code = new lambda.AssetCode('./dist/image-proxy')
+    const code = new lambda.AssetCode('./dist/lambdas/image-proxy')
     const name = 'imagesProxy'
     const apiLambda = new lambda.Function(this, name + 'Lambda', {
       code,

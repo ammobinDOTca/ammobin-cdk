@@ -149,7 +149,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     })
 
     const logExporter = new lambda.Function(this, 'logExporter', {
-      code: new lambda.AssetCode('./dist/log-exporter'),
+      code: new lambda.AssetCode('./dist/lambdas/log-exporter'),
       handler: 'elasticsearch.handler',
       runtime: lambda.Runtime.NODEJS_12_X,
       timeout: Duration.minutes(5),

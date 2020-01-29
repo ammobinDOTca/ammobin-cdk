@@ -4,11 +4,13 @@ import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
 import { App, Stack, StackProps, SecretValue, Arn } from '@aws-cdk/core';
 import iam = require('@aws-cdk/aws-iam')
 import { Bucket } from '@aws-cdk/aws-s3'
-import { Function } from '@aws-cdk/aws-lambda'
+import { Construct, Duration, } from "@aws-cdk/core";
+import { Function, Runtime, AssetCode } from '@aws-cdk/aws-lambda'
+import { PolicyStatement, Role, AccountPrincipal, Policy, Effect, ManagedPolicy, ServicePrincipal } from '@aws-cdk/aws-iam'
 
 import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole';
-import { serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants';
-import { PipelineLambdaInvoker } from './pipeline-lambda-invoker';
+import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants';
+import { PipelineInvokeUserParams } from '../lambdas/pipeline/test-invoker'
 
 export interface PipelineStackProps extends StackProps {
   /**
@@ -90,7 +92,7 @@ export class AmmobinPipelineStack extends Stack {
         // todo: fix this
         cache: {
           paths: [
-            '$CODEBUILD_SRC_DIR/node_modules/**/*',
+            'node_modules/**/*',
             `$CODEBUILD_SRC_DIR_${API_SOURCE}/node_modules/**/*`
           ]
         },
@@ -176,6 +178,42 @@ export class AmmobinPipelineStack extends Stack {
 
     const oauthToken = SecretValue.secretsManager('github-auth-token'); // should manually create beforehand. pipeline wants to make api calls with this token before one has a chance to populate it
 
+
+    const lambdaAssumeRole = new Role(this, 'lambdaAssumRole', {
+      managedPolicies: [ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole')],
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+    })
+
+    lambdaAssumeRole.addToPolicy(new PolicyStatement({
+      actions: ['sts:AssumeRole'],
+      resources: [
+        betaTestInvokeRole.roleArn,
+        prodTestInvokeRole.roleArn,
+      ]
+    }))
+
+    lambdaAssumeRole.addToPolicy(new PolicyStatement({
+      actions: [
+        "codepipeline:PutJobSuccessResult",
+        "codepipeline:PutJobFailureResult"
+      ],
+      resources: [
+        '*' // todo: ref pipeline arn?
+      ]
+    }))
+
+    const testInvokeLambda = new Function(this, 'pipelineTestInvoker', {
+      role: lambdaAssumeRole,
+      runtime: Runtime.NODEJS_12_X,
+      timeout: Duration.minutes(5),
+      logRetention: LOG_RETENTION,
+      handler: 'test-invoker.handler',
+      code: new AssetCode('./dist/lambdas/pipeline')
+    })
+    const caBetaTestFunctionArn = `arn:aws:lambda:ca-central-1:${props.caBetaAWSAccountId}:function:${TEST_LAMBDA_NAME}`
+
+    const caProdTestFunctionArn = `arn:aws:lambda:ca-central-1:${props.caProdAWSAccountId}:function:${TEST_LAMBDA_NAME}`
+
     const pipeline = new codepipeline.Pipeline(this, 'Pipeline', {
       role: pipelineRole,
       restartExecutionOnUpdate: true,
@@ -244,14 +282,12 @@ export class AmmobinPipelineStack extends Stack {
 
             new codepipeline_actions.LambdaInvokeAction({
               actionName: 'betaCAIntegTests',
-              userParameters: {
-                stage: 'beta', region: 'CA'
+              userParameters: <PipelineInvokeUserParams>{
+                base: 'https://beta.ammobin.ca',
+                roleArn: betaTestInvokeRole.roleArn,
+                targetFunctionArn: caBetaTestFunctionArn
               },
-              lambda: new PipelineLambdaInvoker(this, 'betaCAIntegTests', {
-                role: betaTestInvokeRole as iam.Role,
-                targetAccount: props.caBetaAWSAccountId,
-                base: 'https://beta.ammobin.ca'
-              }).function,
+              lambda: testInvokeLambda,
               runOrder: 2,
             })
 
@@ -283,14 +319,12 @@ export class AmmobinPipelineStack extends Stack {
             }),
             new codepipeline_actions.LambdaInvokeAction({
               actionName: 'prodCAIntegTests',
-              userParameters: {
-                stage: 'prod', region: 'CA'
+              userParameters: <PipelineInvokeUserParams>{
+                base: 'https://ammobin.ca',
+                roleArn: prodTestInvokeRole.roleArn,
+                targetFunctionArn: caProdTestFunctionArn
               },
-              lambda: new PipelineLambdaInvoker(this, 'prodCAIntegTests', {
-                role: prodTestInvokeRole as iam.Role,
-                targetAccount: props.caProdAWSAccountId,
-                base: 'https://ammobin.ca'
-              }).function,
+              lambda: testInvokeLambda,
               runOrder: 2,
             })
 

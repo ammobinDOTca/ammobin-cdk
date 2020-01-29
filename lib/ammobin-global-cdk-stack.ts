@@ -36,7 +36,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     })
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
 
-    const apiCode = new lambda.AssetCode('dist/edge-lambdas')
+    const apiCode = new lambda.AssetCode('dist/lambdas/edge')
     const lambdaRole = new iam.Role(this, 'LambdaExecutionRole', {
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -73,10 +73,10 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     // this way it updates version only in case lambda code changes
     // version has to start with a letter
-    const nuxtRerouterVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/nuxt-rerouter.ts'), {
+    const nuxtRerouterVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/nuxt-rerouter.ts'), {
       lambda: nuxtRerouter,
     })
-    const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('edge-lambdas/security-headers.ts'), {
+    const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/security-headers.ts'), {
       lambda: securityHeaders,
     })
 
