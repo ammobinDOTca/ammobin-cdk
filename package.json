@@ -9,7 +9,7 @@
     "build": "npm run build:ts && cp -r lambdas/log-exporter/node_modules dist/lambdas/log-exporter/node_modules && cp -r lambdas/image-proxy/node_modules dist/lambdas/image-proxy/node_modules",
     "watch": "tsc -w",
     "cdk": "cdk",
-    "postinstall": "cd image-proxy && npm i && cd .. && cd log-exporter && npm i && cd .."
+    "postinstall": "cd lambdas/image-proxy && npm i && cd .. && cd log-exporter && npm i && cd ../.."
   },
   "devDependencies": {
     "@aws-cdk/aws-apigateway": "^1.22.0",
