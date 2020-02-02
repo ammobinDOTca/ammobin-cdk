@@ -30,6 +30,7 @@ export async function handler(event: CloudWatchLogsEvent) {
     });
     logger.on('error', function (err) {
       console.error('unexpected error in winston logger', err)
+      throw err
     });
 
   }

@@ -165,15 +165,8 @@ export class AmmobinPipelineStack extends Stack {
     const cdkBuildOutput = new codepipeline.Artifact(CDK_BUILD_OUT);
     const apiBuildOutput = new codepipeline.Artifact(API_BUILD_OUT);
 
-    const artifactBucket = Bucket.fromBucketName(this, 'artifactBucket', cdkBuildOutput.bucketName)
-    // todo: expire artifacts + reduce storage class...
+    const artifactBucket = new Bucket(this, 'artifactBucket', {})
 
-    // todo: confirm if this is needed
-    artifactBucket.grantRead(betaDeployRole) // let beta account read the build artifacts so it can actually deploy them
-    artifactBucket.addToResourcePolicy(new iam.PolicyStatement({
-      actions: ['s3:readBucket'],
-      principals: [betaDeployRole],
-    }))
 
 
     const oauthToken = SecretValue.secretsManager('github-auth-token'); // should manually create beforehand. pipeline wants to make api calls with this token before one has a chance to populate it
@@ -217,6 +210,7 @@ export class AmmobinPipelineStack extends Stack {
     const pipeline = new codepipeline.Pipeline(this, 'Pipeline', {
       role: pipelineRole,
       restartExecutionOnUpdate: true,
+      artifactBucket,
       stages: [
         {
           stageName: 'Source',
@@ -226,7 +220,7 @@ export class AmmobinPipelineStack extends Stack {
               owner: 'ammobinDOTca',
               repo: 'ammobin-cdk',
               oauthToken,
-              output: sourceOutput
+              output: sourceOutput,
             }),
             new codepipeline_actions.GitHubSourceAction({
               actionName: 'github_source_api',
@@ -333,7 +327,7 @@ export class AmmobinPipelineStack extends Stack {
       ],
     })
 
-    // todo add billing alarms....
+
     // todo configure pipeline notification
   }
 }
