@@ -234,14 +234,14 @@ export class AmmobinCdkStack extends cdk.Stack {
       if (props.stage === 'prod') {
         // alarms
         const lowTrafficAlarm = new Alarm(this, 'lowTrafficApi', {
-          datapointsToAlarm: 5,
-          evaluationPeriods: 5,
+          datapointsToAlarm: 6,
+          evaluationPeriods: 6,
           metric: new Metric({
             namespace: 'AWS/ApiGateway',
             metricName: 'Count',
             region: this.region,
             statistic: 'Sum',
-            period: Duration.minutes(5),
+            period: Duration.minutes(10),
             dimensions: {
               ApiName: apiName
             }
