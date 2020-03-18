@@ -48,9 +48,9 @@ new AmmobinCdkStack(app, 'AmmobinCdkStack', {
 /**
  * todo all these need to be params....
  */
-const rootAccount = '123123123' // where route53 + pipeline exist
-const caBetaAWSAccountId = '123123123' // beta ca
-const caProdAWSAccountId = '123123123' // beta ca
+const rootAccount = '911856505652' // where route53 + pipeline exist
+const caBetaAWSAccountId = '652374912961' // beta ca
+const caProdAWSAccountId = '968559063536'
 
 new IamStack(app, 'IamStack', {
   env: {

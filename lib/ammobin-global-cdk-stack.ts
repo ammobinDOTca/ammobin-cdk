@@ -51,7 +51,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const nuxtRerouter = new lambda.Function(this, 'nuxtRerouter', {
       code: apiCode,
       handler: 'nuxt-rerouter.handler',
-      runtime: lambda.Runtime.NODEJS_10_X,
+      runtime: lambda.Runtime.NODEJS_12_X,
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
@@ -62,7 +62,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const securityHeaders = new lambda.Function(this, 'securityHeaders', {
       code: apiCode,
       handler: 'security-headers.handler',
-      runtime: lambda.Runtime.NODEJS_10_X,
+      runtime: lambda.Runtime.NODEJS_12_X,
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
