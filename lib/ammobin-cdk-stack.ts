@@ -2,10 +2,10 @@ import lambda = require('@aws-cdk/aws-lambda')
 import cdk = require('@aws-cdk/core')
 import dynamodb = require('@aws-cdk/aws-dynamodb')
 import sqs = require('@aws-cdk/aws-sqs')
-import { SqsEventSource, } from '@aws-cdk/aws-lambda-event-sources'
+import { SqsEventSource, SnsEventSource } from '@aws-cdk/aws-lambda-event-sources'
 import { Duration } from '@aws-cdk/core'
 import events = require('@aws-cdk/aws-events')
-import sm = require('@aws-cdk/aws-secretsmanager')
+import sns = require('@aws-cdk/aws-sns')
 import { RetentionDays } from '@aws-cdk/aws-logs'
 import { Secret } from '@aws-cdk/aws-secretsmanager'
 import * as iam from '@aws-cdk/aws-iam'
@@ -15,7 +15,7 @@ import { Topic, } from '@aws-cdk/aws-sns'
 import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
 
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME } from './constants'
+import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS } from './constants'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { exportLambdaLogsToLogger } from './helper'
 import { AmmobinImagesStack } from './ammobin-images-stack'
@@ -86,6 +86,12 @@ export class AmmobinCdkStack extends cdk.Stack {
       visibilityTimeout: Duration.minutes(5),
     })
 
+    const workTopic = new sns.Topic(this, 'workTopic', {
+    })
+
+    const largeMemoryTopic = new sns.Topic(this, 'LargeMemoryWorkTopic', {
+    })
+
 
     // keep outside of this dir, had issues with symlinks breaking the upload...
     const refresherLambda = new lambda.Function(this, 'refresher', {
@@ -97,6 +103,8 @@ export class AmmobinCdkStack extends cdk.Stack {
       environment: {
         QueueUrl: workQueue.queueUrl,
         LargeMemoryQueueUrl: largeMemoryQueue.queueUrl,
+        SNSArn: workTopic.topicArn,
+        LargeMemorySNSArn: largeMemoryTopic.topicArn,
         NODE_ENV,
         STAGE,
         DONT_LOG_CONSOLE
@@ -105,13 +113,10 @@ export class AmmobinCdkStack extends cdk.Stack {
       description: 'invoked by cloudwatch scheduled event to trigger all the of the scrape tasks'
     })
 
-    // refresh once a day (UTC)
+
     const refreshCron = new events.Rule(this, 'referesher', {
       description: 'refresh all prices in dynamo',
-      schedule: events.Schedule.cron({
-        hour: '8',
-        minute: '1',
-      }),
+      schedule: events.Schedule.rate(Duration.hours(REFRESH_HOURS)),
       enabled: props.stage === 'prod' // don't run the full cron schedule for beta (todo: have refresher only do a small subset)
     })
     refresherLambda.addEventSource(new CloudwatchScheduleEvent(refreshCron))
@@ -119,6 +124,8 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     workQueue.grantSendMessages(refresherLambda)
     largeMemoryQueue.grantSendMessages(refresherLambda)
+    workTopic.grantPublish(refresherLambda)
+    largeMemoryTopic.grantPublish(refresherLambda)
 
     const workerCode = new lambda.AssetCode(CODE_BASE + 'worker')
     const workerLambda = this.generateWorker('worker', {
@@ -128,7 +135,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       STAGE,
       DONT_LOG_CONSOLE,
       'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
-    }, workQueue, Duration.minutes(3), workerCode, 1024)
+    }, workQueue, workTopic, Duration.minutes(3), workerCode, 1024)
 
     const largeMemoryWorkerLambda = this.generateWorker('largeMemoryWorker', {
       TABLE_NAME,
@@ -137,7 +144,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       STAGE,
       DONT_LOG_CONSOLE,
       'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
-    }, largeMemoryQueue, Duration.minutes(5), workerCode, 3008)
+    }, largeMemoryQueue, largeMemoryTopic, Duration.minutes(5), workerCode, 3008)
 
     // rendertronUrl.grantRead(workerLambda)
     itemsTable.grantWriteData(workerLambda)
@@ -258,7 +265,7 @@ export class AmmobinCdkStack extends cdk.Stack {
 
   }
 
-  private generateWorker(name: string, environment: { [k: string]: string }, queue: sqs.IQueue, timeout: Duration, code: lambda.Code, memorySize: number): lambda.Function {
+  private generateWorker(name: string, environment: { [k: string]: string }, queue: sqs.IQueue, topic: sns.Topic, timeout: Duration, code: lambda.Code, memorySize: number): lambda.Function {
 
     const workerLambda = new lambda.Function(this, name, {
       code,
@@ -275,6 +282,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       ]
     })
     workerLambda.addEventSource(new SqsEventSource(queue))
+    workerLambda.addEventSource(new SnsEventSource(topic))
     queue.grantConsumeMessages(workerLambda)
 
     return workerLambda

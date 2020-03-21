@@ -2,7 +2,7 @@ import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import lambda = require('@aws-cdk/aws-lambda')
 import iam = require('@aws-cdk/aws-iam')
-import { LOG_RETENTION, Stage } from './constants'
+import { LOG_RETENTION, Stage, REFRESH_HOURS } from './constants'
 import { Duration } from '@aws-cdk/core'
 import { Alarm, Metric, ComparisonOperator, TreatMissingData } from '@aws-cdk/aws-cloudwatch'
 import { SnsAction } from '@aws-cdk/aws-cloudwatch-actions'
@@ -156,7 +156,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               },
               isDefaultBehavior: true,
               defaultTtl: Duration.days(365),
-              minTtl: Duration.days(1), // want to make sure that updated pages get sent (refreshing once a day now)
+              minTtl: Duration.days(REFRESH_HOURS / 24), // want to make sure that updated pages get sent (refreshing once a day now)
             },
           ],
         },
@@ -192,7 +192,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               },
               allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
               cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
-              defaultTtl: Duration.days(1),
+              defaultTtl: Duration.days(REFRESH_HOURS / 24),
               minTtl: Duration.minutes(30),
             },
           ],
