@@ -4,9 +4,9 @@ import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
 import { App, Stack, StackProps, SecretValue, Arn } from '@aws-cdk/core';
 import iam = require('@aws-cdk/aws-iam')
 import { Bucket } from '@aws-cdk/aws-s3'
-import { Construct, Duration, } from "@aws-cdk/core";
+import { Duration, } from "@aws-cdk/core";
 import { Function, Runtime, AssetCode } from '@aws-cdk/aws-lambda'
-import { PolicyStatement, Role, AccountPrincipal, Policy, Effect, ManagedPolicy, ServicePrincipal } from '@aws-cdk/aws-iam'
+import { PolicyStatement, Role, ManagedPolicy, ServicePrincipal } from '@aws-cdk/aws-iam'
 
 import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole';
 import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants';
@@ -73,10 +73,10 @@ export class AmmobinPipelineStack extends Stack {
           install: {
             'runtime-versions': { nodejs },
             commands: [
-              'npm install',
+              'npm ci',
               'npm run postinstall',
               `cd $CODEBUILD_SRC_DIR_${API_SOURCE}`,
-              'npm install',
+              'npm ci',
               'cd $CODEBUILD_SRC_DIR',
             ]
           },
