@@ -37,6 +37,10 @@ export async function handler(event: CloudWatchLogsEvent) {
   const buff = await promisify(unzip)(Buffer.from(event.awslogs.data, "base64"))
   try {
     const msg = JSON.parse((buff as Buffer).toString())
+    if (typeof msg === 'string') {
+      console.error('[ERROR]: msg is a sting....skipping', msg)
+      return true;
+    }
     await Promise.all(msg.logEvents.map(le => new Promise((resolve, reject) => logger.info(JSON.parse(le.message).message, (err) => err ? reject(err) : resolve()))))
     return true
   } catch (e) {
