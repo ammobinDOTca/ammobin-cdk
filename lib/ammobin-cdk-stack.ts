@@ -167,7 +167,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         DONT_LOG_CONSOLE,
         ES_URL_SECRET_ID: esUrlSecret.secretArn
       },
-      logRetention: LOG_RETENTION,
+      logRetention: RetentionDays.THREE_DAYS,
       description: 'moves logs from cloudwatch to elasticsearch'
     })
     esUrlSecret.grantRead(logExporter)
