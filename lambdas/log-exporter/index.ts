@@ -58,7 +58,7 @@ const sm = new SecretsManager()
 
 function post(url: URL, body) {
   url.pathname = '/ammobin.ca-aws'
-  return axios.post(url.toString(), 'json=' + JSON.stringify(body))
+  return axios.post(url.toString(), body)
 }
 export async function handler(event: CloudWatchLogsEvent) {
 
