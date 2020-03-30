@@ -42,7 +42,7 @@ export async function handler(event: CloudWatchLogsEvent) {
       console.error('[ERROR]: msg is a sting....skipping', msg)
       return true;
     }
-    await Promise.all(msg.logEvents.map(le => new Promise((resolve, reject) => logger.info(JSON.parse(le.message).message, (err) => err ? reject(err) : resolve()))))
+    await Promise.all(msg.logEvents.map(le => new Promise((resolve, reject) => logger.info(JSON.stringify(JSON.parse(le.message).message), (err) => err ? reject(err) : resolve()))))
     return true
   } catch (e) {
     console.error(e)
