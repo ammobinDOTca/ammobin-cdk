@@ -17,31 +17,36 @@ function post(url: URL, body) {
       'Content-Type': 'application/json',
       'Content-Length': requestBody.length
     },
+    timeout: 2000
   }
 
   return new Promise((resolve, reject) => {
-    const req = request(url, options, res => {
-      const { statusCode } = res
+    try {
+      const req = request(url, options, res => {
+        const { statusCode } = res
 
-      res.on('data', data => {
-        resolve({
-          statusCode,
-          data
+        res.on('data', data => {
+          resolve({
+            statusCode,
+            data
+          })
         })
-      })
 
 
-      req.on('error', error => {
-        reject({
-          statusCode,
-          error
+        req.on('error', error => {
+          reject({
+            statusCode,
+            error
+          })
         })
+
+
+        req.write(requestBody)
+        req.end()
       })
-
-
-      req.write(requestBody)
-      req.end()
-    })
+    } catch (e) {
+      reject(e)
+    }
   })
 }
 
