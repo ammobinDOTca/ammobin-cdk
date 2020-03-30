@@ -57,6 +57,7 @@ const sm = new SecretsManager()
 
 
 function post(url: URL, body) {
+  //https://docs.fluentd.org/input/http#how-to-use-http-content-type-header
   url.pathname = '/ammobin.ca-aws'
   return axios.post(url.toString(), body)
 }
@@ -71,7 +72,7 @@ export async function handler(event: CloudWatchLogsEvent) {
       console.error('[ERROR]: msg is a sting....skipping', msg)
       return true
     }
-    await Promise.all(msg.logEvents.map(le => post(esUrl, JSON.parse(le.message).message)))
+    await Promise.all(msg.logEvents.map(le => post(esUrl, JSON.parse(le.message))))
     return true
   } catch (e) {
     console.error(e)
