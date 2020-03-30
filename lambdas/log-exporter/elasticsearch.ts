@@ -4,7 +4,7 @@ import { unzip } from 'zlib'
 import { promisify } from 'util'
 
 import winston = require('winston');
-import Elasticsearch from 'winston-elasticsearch'
+const Elasticsearch = require('winston-elasticsearch')
 
 let logger: winston.Logger
 
