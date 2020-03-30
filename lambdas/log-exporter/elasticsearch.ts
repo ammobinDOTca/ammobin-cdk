@@ -4,7 +4,7 @@ import { unzip } from 'zlib'
 import { promisify } from 'util'
 
 import winston = require('winston');
-const Elasticsearch = require('winston-elasticsearch')
+import Elasticsearch from 'winston-elasticsearch'
 
 let logger: winston.Logger
 
@@ -20,7 +20,22 @@ export async function handler(event: CloudWatchLogsEvent) {
           level: 'info',
           flushInterval: 10,
           buffering: false,
-          ensureMappingTemplate: false,
+          ensureMappingTemplate: true,
+          mappingTemplate: {
+            "mappings": {
+              "_source": { "enabled": true },
+              "properties": {
+                "@timestamp": { "type": "date" },
+                "@version": { "type": "keyword" },
+                "message": { "type": "object", "dynamic": true },
+                "severity": { "type": "keyword", "index": true },
+                "fields": {
+                  "dynamic": true,
+                  "properties": {}
+                }
+              }
+            }
+          },
           indexPrefix: 'ammobin.ca-aws',
           clientOpts: {
             node: result.SecretString || '',
@@ -42,7 +57,7 @@ export async function handler(event: CloudWatchLogsEvent) {
       console.error('[ERROR]: msg is a sting....skipping', msg)
       return true;
     }
-    await Promise.all(msg.logEvents.map(le => new Promise((resolve, reject) => logger.info(JSON.stringify(JSON.parse(le.message).message), (err) => err ? reject(err) : resolve()))))
+    await Promise.all(msg.logEvents.map(le => new Promise((resolve, reject) => logger.info(JSON.parse(le.message).message, (err) => err ? reject(err) : resolve()))))
     return true
   } catch (e) {
     console.error(e)
