@@ -20,6 +20,7 @@ export async function handler(event: CloudWatchLogsEvent) {
           level: 'info',
           flushInterval: 10,
           buffering: false,
+          ensureMappingTemplate: false,
           indexPrefix: 'ammobin.ca-aws',
           clientOpts: {
             node: result.SecretString || '',
