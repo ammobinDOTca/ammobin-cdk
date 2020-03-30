@@ -157,7 +157,7 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     const logExporter = new lambda.Function(this, 'logExporter', {
       code: new lambda.AssetCode('./dist/lambdas/log-exporter'),
-      handler: 'elasticsearch.handler',
+      handler: 'index.handler',
       runtime: lambda.Runtime.NODEJS_12_X,
       timeout: Duration.minutes(5),
       memorySize: 128,
@@ -168,10 +168,10 @@ export class AmmobinCdkStack extends cdk.Stack {
         ES_URL_SECRET_ID: esUrlSecret.secretArn
       },
       logRetention: LOG_RETENTION,
-      description: 'moves logs from cloudwatch to elastic search'
+      description: 'moves logs from cloudwatch to elasticsearch'
     })
-    esUrlSecret.grantRead(logExporter);
-    logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: this.region }));
+    esUrlSecret.grantRead(logExporter)
+    logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: this.region }))
 
     const testLambda = new lambda.Function(this, 'testLambda', {
       functionName: TEST_LAMBDA_NAME,

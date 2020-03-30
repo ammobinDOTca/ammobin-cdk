@@ -8,9 +8,5 @@
   },
   "author": "nexus-uw",
   "license": "MIT",
-  "dependencies": {
-    "logform": "^2.1.2",
-    "winston": "^3.2.1",
-    "winston-elasticsearch": "^0.8.5"
-  }
+  "dependencies": {}
 }
