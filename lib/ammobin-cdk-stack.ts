@@ -159,7 +159,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       code: new lambda.AssetCode('./dist/lambdas/log-exporter'),
       handler: 'index.handler',
       runtime: lambda.Runtime.NODEJS_12_X,
-      timeout: Duration.minutes(5),
+      timeout: Duration.minutes(1),
       memorySize: 128,
       environment: {
         NODE_ENV,

@@ -8,14 +8,16 @@ import { request, RequestOptions } from 'https' // todo: use http2
 import { URL } from 'url'
 
 function post(url: URL, body) {
-
-  const requestBody = JSON.stringify(body)
+  // https://docs.fluentd.org/v/0.12/input/http
+  url.pathname = '/ammobin.ca-aws'
+  const requestBody = 'json=' + JSON.stringify(body)
 
   const options: RequestOptions = {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Content-Length': requestBody.length
+      'Content-Length': requestBody.length,
+      'ammobin-aws': 'yup'
     },
     timeout: 2000
   }
