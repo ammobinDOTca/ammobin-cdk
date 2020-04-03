@@ -13,4 +13,4 @@ export const TEST_LAMBDA_NAME = 'ammobinIntegTest'
 /**
  * how often to refresh
  */
-export const REFRESH_HOURS = 6 //things are hot right now. todo restore 24 once its cooled off
+export const REFRESH_HOURS = 24 //things are hot right now. todo restore 24 once its cooled off
