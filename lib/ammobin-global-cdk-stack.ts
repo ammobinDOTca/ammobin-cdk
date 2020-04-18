@@ -30,6 +30,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
   constructor(scope: cdk.App, id: string, props: IAmmobinGlobalCdkStackProps) {
     super(scope, id, props)
 
+
+
     this.cert = new acm.Certificate(this, 'RootGlobalCert', {
       domainName: props.publicUrl,
       validationMethod: acm.ValidationMethod.DNS,
@@ -92,6 +94,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       bucketName: props.siteBucket,
       publicReadAccess: false,
     })
+    siteBucket.addLifecycleRule({ expiration: Duration.days(30) })
     new cdk.CfnOutput(this, 'siteBucket', { value: siteBucket.bucketName })
 
     new s3.BucketPolicy(this, "BucketPolicy", {

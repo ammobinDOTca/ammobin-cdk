@@ -65,6 +65,7 @@ export class AmmobinPipelineStack extends Stack {
     const s3BuildCache = new Bucket(this, 's3BuildCache', {
       // todo: expire build cache?
     })
+    s3BuildCache.addLifecycleRule({ expiration: Duration.days(30) })
 
     const cdkBuild = new codebuild.PipelineProject(this, 'CdkBuild', {
       buildSpec: codebuild.BuildSpec.fromObject({
@@ -166,7 +167,7 @@ export class AmmobinPipelineStack extends Stack {
     const apiBuildOutput = new codepipeline.Artifact(API_BUILD_OUT);
 
     const artifactBucket = new Bucket(this, 'artifactBucket', {})
-
+    artifactBucket.addLifecycleRule({ expiration: Duration.days(30) })
 
 
     const oauthToken = SecretValue.secretsManager('github-auth-token'); // should manually create beforehand. pipeline wants to make api calls with this token before one has a chance to populate it

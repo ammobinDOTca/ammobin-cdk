@@ -151,9 +151,10 @@ export class AmmobinCdkStack extends cdk.Stack {
     itemsTable.grantWriteData(largeMemoryWorkerLambda)
 
     // manually set the value of this secret once created
-    const esUrlSecret = new Secret(this, 'esUrlSecret', {
-      description: 'url with user + pass to send logs to. should be in the form https://user:password@example.com',
-    })
+    const esUrlSecret = STAGE === "prod" ?
+      new Secret(this, 'esUrlSecret', {
+        description: 'url with user + pass to send logs to. should be in the form https://user:password@example.com',
+      }) : null
 
     const logExporter = new lambda.Function(this, 'logExporter', {
       code: new lambda.AssetCode('./dist/lambdas/log-exporter'),
@@ -165,12 +166,14 @@ export class AmmobinCdkStack extends cdk.Stack {
         NODE_ENV,
         STAGE,
         DONT_LOG_CONSOLE,
-        ES_URL_SECRET_ID: esUrlSecret.secretArn
+        ES_URL_SECRET_ID: esUrlSecret?.secretArn || ''
       },
       logRetention: RetentionDays.THREE_DAYS,
       description: 'moves logs from cloudwatch to elasticsearch'
     })
-    esUrlSecret.grantRead(logExporter)
+    if (STAGE === "prod") {
+      esUrlSecret?.grantRead(logExporter)
+    }
     logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: this.region }))
 
     const testLambda = new lambda.Function(this, 'testLambda', {
