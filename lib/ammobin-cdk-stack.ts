@@ -46,7 +46,8 @@ export class AmmobinCdkStack extends cdk.Stack {
         type: dynamodb.AttributeType.STRING,
       },
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      removalPolicy: cdk.RemovalPolicy.DESTROY
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      timeToLiveAttribute: 'ttl'
     })
 
     new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage })
