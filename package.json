@@ -9,7 +9,9 @@
     "build": "npm run build:ts && cp -r lambdas/log-exporter/node_modules dist/lambdas/log-exporter/node_modules && cp -r lambdas/image-proxy/node_modules dist/lambdas/image-proxy/node_modules",
     "watch": "tsc -w",
     "cdk": "cdk",
-    "postinstall": "cd lambdas/image-proxy && npm i && cd .. && cd log-exporter && npm i && cd ../.."
+    "postinstall": "cd lambdas/image-proxy && npm i && cd .. && cd log-exporter && npm i && cd ../..",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "devDependencies": {
     "@aws-cdk/aws-apigateway": "^1.33.0",
@@ -38,6 +40,8 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "aws-cdk": "^1.33.0"
-  }
+    "aws-cdk": "^1.33.0",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
