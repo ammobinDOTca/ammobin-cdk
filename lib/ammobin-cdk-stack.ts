@@ -188,11 +188,11 @@ export class AmmobinCdkStack extends cdk.Stack {
     });
 
     [
-      // workerLambda,
-      // refresherLambda,
-      // api.lambda,
-      // api.graphqlLambda,
-      // testLambda
+      workerLambda,
+      refresherLambda,
+      api.lambda,
+      api.graphqlLambda,
+      testLambda
     ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
 
 
