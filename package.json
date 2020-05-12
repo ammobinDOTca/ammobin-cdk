@@ -38,6 +38,6 @@
     "typescript": "^3.8.3"
   },
   "dependencies": {
-    "aws-cdk": "^1.33.0"
+    "aws-cdk": "^1.33.1"
   }
 }
