@@ -2,9 +2,8 @@ import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda'
 import { resize } from 'imagemagick'
 import { get as getHttp } from 'http'
 import { get as getHttps } from 'https'
-import { Binary } from 'aws-sdk/clients/sns'
 import { fstat } from 'fs'
-async function resizeImage(url: string, width: number): Promise<{ contentType: string, body: Binary }> {
+async function resizeImage(url: string, width: number): Promise<{ contentType: string, body: any }> {
   const { srcData, contentType } = await new Promise((resolve, reject) => (url.startsWith('https') ? getHttps : getHttp)(url, (res) => {
     // todo: assert content type + size + timeouts
 
