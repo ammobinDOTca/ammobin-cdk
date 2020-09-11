@@ -9,6 +9,6 @@
   "author": "nexus-uw",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.19.2"
+    "axios": "^0.20.0"
   }
 }
