@@ -282,7 +282,8 @@ export class AmmobinCdkStack extends cdk.Stack {
       description: 'listens to queue of scrape tasks and performs a search and stores the result in the db',
       layers: [
         //https://github.com/shelfio/chrome-aws-lambda-layer
-        lambda.LayerVersion.fromLayerVersionArn(this, name + 'shelfio_chrome-aws-lambda-layer', 'arn:aws:lambda:ca-central-1:764866452798:layer:chrome-aws-lambda:8')
+        lambda.LayerVersion.fromLayerVersionArn(this, name + 'shelfio_chrome-aws-lambda-layer',
+          `arn:aws:lambda:${this.region}:764866452798:layer:chrome-aws-lambda:20`)
       ]
     })
     workerLambda.addEventSource(new SqsEventSource(queue))
