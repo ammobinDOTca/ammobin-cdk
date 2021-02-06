@@ -1,48 +1,69 @@
-import codebuild = require('@aws-cdk/aws-codebuild');
-import codepipeline = require('@aws-cdk/aws-codepipeline');
-import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions');
-import { App, Stack, StackProps, SecretValue, Arn } from '@aws-cdk/core';
+import codebuild = require('@aws-cdk/aws-codebuild')
+import codepipeline = require('@aws-cdk/aws-codepipeline')
+import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions')
+import { App, Stack, StackProps, SecretValue, Arn } from '@aws-cdk/core'
 import iam = require('@aws-cdk/aws-iam')
 import { Bucket } from '@aws-cdk/aws-s3'
-import { Duration, } from "@aws-cdk/core";
+import { Duration, } from "@aws-cdk/core"
 import { Function, Runtime, AssetCode } from '@aws-cdk/aws-lambda'
 import { PolicyStatement, Role, ManagedPolicy, ServicePrincipal } from '@aws-cdk/aws-iam'
 
-import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole';
-import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants';
+import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole'
+import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants'
 import { PipelineInvokeUserParams } from '../lambdas/pipeline/test-invoker'
+import { getAccountForRegionAndStage, regionToAWSRegion } from './helper'
 
 export interface PipelineStackProps extends StackProps {
-  /**
-   * aws account id used for beta CA
-   */
-  caBetaAWSAccountId: string
-  /**
-    * aws account id used for prod CA
-    */
-  caProdAWSAccountId: string
+
+  regions: Region[]
+  stages: Stage[]
+
 }
 
 export class AmmobinPipelineStack extends Stack {
   //https://winterwindsoftware.com/serverless-cicd-pipelines-with-aws-cdk/
 
   constructor(app: App, id: string, props: PipelineStackProps) {
-    super(app, id, props);
+    super(app, id, props)
 
     const API_SOURCE = 'ammobinApi'
     const nodejs = 12
     const buildImage = codebuild.LinuxBuildImage.STANDARD_3_0
-    const CDK_BUILD_OUT = 'CdkBuildOutput';
+    const CDK_BUILD_OUT = 'CdkBuildOutput'
     const API_BUILD_OUT = 'ApiBuildOutput'
 
+
+    const { stages, regions } = props
+    const pipelineRoles: {
+      [stage in Stage]: {
+        [region in Region]: {
+          deploy: iam.IRole
+          test: iam.IRole
+        }
+      }
+    } = stages.reduce((map, stage) => {
+      map[stage] = {} as any
+      regions.forEach(region => {
+        const account = getAccountForRegionAndStage(region, stage)
+        if (account) {
+          map[stage][region] = {
+            deploy: iam.Role.fromRoleArn(this, `deploy${stage}${region}Role`, CrossAccountDeploymentRoles.getDeployRoleArnForService(serviceName, stage, region, account)),
+            test: iam.Role.fromRoleArn(this, `test${stage}${region}Role`, CrossAccountDeploymentRoles.getDeployRoleArnForService(serviceName, stage, region, account)),
+          }
+        }
+      })
+      return map
+    }, {} as {
+      [stage in Stage]: {
+        [region in Region]: {
+          deploy: iam.IRole
+          test: iam.IRole
+        }
+      }
+    })
+
     // role used in beta account to deploy stack there
-    const betaDeployRole = iam.Role.fromRoleArn(this, 'deployBetaRole', CrossAccountDeploymentRoles.getDeployRoleArnForService(serviceName, 'beta', 'CA', props.caBetaAWSAccountId))
 
-    const betaTestInvokeRole = iam.Role.fromRoleArn(this, 'testInvokeBetaRole', CrossAccountDeploymentRoles.getTestRoleArnForService(serviceName, 'beta', 'CA', props.caBetaAWSAccountId))
-
-
-    const prodDeployRole = iam.Role.fromRoleArn(this, 'prodDeployRole', CrossAccountDeploymentRoles.getDeployRoleArnForService(serviceName, 'prod', 'CA', props.caProdAWSAccountId))
-    const prodTestInvokeRole = iam.Role.fromRoleArn(this, 'prodTestInvokeRole', CrossAccountDeploymentRoles.getTestRoleArnForService(serviceName, 'prod', 'CA', props.caProdAWSAccountId))
 
     // role used by the pipeline itself
     const pipelineRole = new iam.Role(this, 'pipelineRole', {
@@ -56,10 +77,16 @@ export class AmmobinPipelineStack extends Stack {
     // allow the codeBuild that is assuming the deploy role to run cdk deploy in the external account
     pipelineDeployToBetaAccountRole.addToPolicy(new iam.PolicyStatement({
       actions: ['sts:AssumeRole'],
-      resources: [
-        betaDeployRole.roleArn,
-        prodDeployRole.roleArn,
-      ]
+      resources:
+        stages.reduce((lst, stage) => {
+          regions.forEach(region => {
+            const roles = pipelineRoles[stage][region]
+            if (roles) {
+              lst.push(pipelineRoles[stage][region].deploy.roleArn)
+            }
+          })
+          return lst
+        }, [] as string[])
     }))
 
     const s3BuildCache = new Bucket(this, 's3BuildCache', {
@@ -118,7 +145,7 @@ export class AmmobinPipelineStack extends Stack {
         buildImage
       },
       cache: codebuild.Cache.bucket(s3BuildCache, { prefix: 'CdkBuild' })
-    });
+    })
 
     const generateDeployToAccountBuild = (name: string, role: string, stage: Stage, region: Region, stack: string) => {
       return new codebuild.PipelineProject(this, name + stage + region, {
@@ -141,7 +168,7 @@ export class AmmobinPipelineStack extends Stack {
               export AWS_SECRET_ACCESS_KEY=$(node -p "require('./temp_creds.json').Credentials.SecretAccessKey")
               export AWS_SESSION_TOKEN=$(node -p "require('./temp_creds.json').Credentials.SessionToken")
               echo AWS_ACCESS_KEY_ID $AWS_ACCESS_KEY_ID
-              stage=${stage} apiCode=$CODEBUILD_SRC_DIR_${API_BUILD_OUT} node node_modules/aws-cdk/bin/cdk.js deploy ${stack}`,
+              stage=${stage} site_region=${region} region=${regionToAWSRegion(region)} apiCode=$CODEBUILD_SRC_DIR_${API_BUILD_OUT} node node_modules/aws-cdk/bin/cdk.js deploy ${stack}`,
               ],
             },
           },
@@ -150,27 +177,22 @@ export class AmmobinPipelineStack extends Stack {
           buildImage
         },
         role: pipelineDeployToBetaAccountRole, // important.....(need custom role to allow us to manually assume role in beta account)
-      });
+      })
     }
 
-    const cdkDeployCloudFront = generateDeployToAccountBuild('deployCloudFront', betaDeployRole.roleArn, 'beta', 'CA', 'AmmobinGlobalCdkStack')
-    const cdkDeployApi = generateDeployToAccountBuild('deployApi', betaDeployRole.roleArn, 'beta', 'CA', 'AmmobinCdkStack')
-
-    const cdkDeployProdCloudFront = generateDeployToAccountBuild('deployCloudFront', prodDeployRole.roleArn, 'prod', 'CA', 'AmmobinGlobalCdkStack')
-    const cdkDeployProdApi = generateDeployToAccountBuild('deployApi', prodDeployRole.roleArn, 'prod', 'CA', 'AmmobinCdkStack')
 
 
-    const sourceOutput = new codepipeline.Artifact('ammobinCdk');
-    const apiSourceOutput = new codepipeline.Artifact(API_SOURCE);
+    const sourceOutput = new codepipeline.Artifact('ammobinCdk')
+    const apiSourceOutput = new codepipeline.Artifact(API_SOURCE)
 
-    const cdkBuildOutput = new codepipeline.Artifact(CDK_BUILD_OUT);
-    const apiBuildOutput = new codepipeline.Artifact(API_BUILD_OUT);
+    const cdkBuildOutput = new codepipeline.Artifact(CDK_BUILD_OUT)
+    const apiBuildOutput = new codepipeline.Artifact(API_BUILD_OUT)
 
     const artifactBucket = new Bucket(this, 'artifactBucket', {})
     artifactBucket.addLifecycleRule({ expiration: Duration.days(30) })
 
 
-    const oauthToken = SecretValue.secretsManager('github-auth-token'); // should manually create beforehand. pipeline wants to make api calls with this token before one has a chance to populate it
+    const oauthToken = SecretValue.secretsManager('github-auth-token') // should manually create beforehand. pipeline wants to make api calls with this token before one has a chance to populate it
 
 
     const lambdaAssumeRole = new Role(this, 'lambdaAssumRole', {
@@ -180,10 +202,15 @@ export class AmmobinPipelineStack extends Stack {
 
     lambdaAssumeRole.addToPolicy(new PolicyStatement({
       actions: ['sts:AssumeRole'],
-      resources: [
-        betaTestInvokeRole.roleArn,
-        prodTestInvokeRole.roleArn,
-      ]
+      resources: stages.reduce((lst, stage) => {
+        regions.forEach(region => {
+          const roles = pipelineRoles[stage][region]
+          if (roles) {
+            lst.push(pipelineRoles[stage][region].test.roleArn)
+          }
+        })
+        return lst
+      }, [] as string[])
     }))
 
     lambdaAssumeRole.addToPolicy(new PolicyStatement({
@@ -204,9 +231,13 @@ export class AmmobinPipelineStack extends Stack {
       handler: 'test-invoker.handler',
       code: new AssetCode('./dist/lambdas/pipeline')
     })
-    const caBetaTestFunctionArn = `arn:aws:lambda:ca-central-1:${props.caBetaAWSAccountId}:function:${TEST_LAMBDA_NAME}`
 
-    const caProdTestFunctionArn = `arn:aws:lambda:ca-central-1:${props.caProdAWSAccountId}:function:${TEST_LAMBDA_NAME}`
+
+    function getIntegTestArn({ region, stage }: { region: Region, stage: Stage }): string {
+      const awsRegion = regionToAWSRegion(region)
+      const account = getAccountForRegionAndStage(region, stage)
+      return `arn:aws:lambda:${awsRegion}:${account}:function:${TEST_LAMBDA_NAME}`
+    }
 
     const pipeline = new codepipeline.Pipeline(this, 'Pipeline', {
       role: pipelineRole,
@@ -250,81 +281,50 @@ export class AmmobinPipelineStack extends Stack {
             // 20200105 todo: build client + put in s3 sitebucket for NON-prod...
           ],
         },
-        {
-          stageName: 'DeployBetaCA',
-          actions: [
-            new codepipeline_actions.CodeBuildAction({
-              actionName: 'cdkDeployApi',
-              project: cdkDeployApi,
-              input: cdkBuildOutput,
-              extraInputs: [
-                apiBuildOutput
-              ],
-              outputs: [],
-              runOrder: 1
-            }),
+        ...stages.reduce((pipelineStages, stage) => {
+          return pipelineStages.concat(
+            regions.reduce((lst, region) => {
+              return lst.concat({
+                stageName: `Deploy${stage}${region}`,
+                actions: [
+                  new codepipeline_actions.CodeBuildAction({
+                    actionName: 'cdkDeployApi',
+                    project: generateDeployToAccountBuild('deployApi', pipelineRoles[stage][region].deploy.roleArn, stage, region, 'AmmobinCdkStack'),
+                    input: cdkBuildOutput,
+                    extraInputs: [
+                      apiBuildOutput
+                    ],
+                    outputs: [],
+                    runOrder: 1
+                  }),
 
-            new codepipeline_actions.CodeBuildAction({
-              actionName: 'cdkDeployCloudFront',
-              project: cdkDeployCloudFront,
-              input: cdkBuildOutput,
-              extraInputs: [
-                apiBuildOutput
-              ],
-              outputs: [],
-              runOrder: 1
-            }),
+                  new codepipeline_actions.CodeBuildAction({
+                    actionName: 'cdkDeployCloudFront',
+                    project: generateDeployToAccountBuild('deployCloudFront', pipelineRoles[stage][region].deploy.roleArn, stage, region, 'AmmobinGlobalCdkStack'),
+                    input: cdkBuildOutput,
+                    extraInputs: [
+                      apiBuildOutput
+                    ],
+                    outputs: [],
+                    runOrder: 1
+                  }),
 
-            new codepipeline_actions.LambdaInvokeAction({
-              actionName: 'betaCAIntegTests',
-              userParameters: <PipelineInvokeUserParams>{
-                base: 'https://beta.ammobin.ca',
-                roleArn: betaTestInvokeRole.roleArn,
-                targetFunctionArn: caBetaTestFunctionArn
-              },
-              lambda: testInvokeLambda,
-              runOrder: 2,
-            })
+                  new codepipeline_actions.LambdaInvokeAction({
+                    actionName: `${stage}${region}IntegTests`,
+                    userParameters: <PipelineInvokeUserParams>{
+                      base: `https://${stage.toLowerCase()}.ammobin.${region.toLowerCase()}`,
+                      roleArn: pipelineRoles[stage][region].test.roleArn,
+                      targetFunctionArn: getIntegTestArn({ stage, region })
+                    },
+                    lambda: testInvokeLambda,
+                    runOrder: 2,
+                  })
 
-          ],
-        },
-        {
-          stageName: 'DeployProdCA',
-          actions: [
-            new codepipeline_actions.CodeBuildAction({
-              actionName: 'cdkDeployApi',
-              project: cdkDeployProdApi,
-              input: cdkBuildOutput,
-              extraInputs: [
-                apiBuildOutput
-              ],
-              outputs: [],
-              runOrder: 1
-            }),
-
-            new codepipeline_actions.CodeBuildAction({
-              actionName: 'cdkDeployCloudFront',
-              project: cdkDeployProdCloudFront,
-              input: cdkBuildOutput,
-              extraInputs: [
-                apiBuildOutput
-              ],
-              outputs: [],
-              runOrder: 1
-            }),
-            new codepipeline_actions.LambdaInvokeAction({
-              actionName: 'prodCAIntegTests',
-              userParameters: <PipelineInvokeUserParams>{
-                base: 'https://ammobin.ca',
-                roleArn: prodTestInvokeRole.roleArn,
-                targetFunctionArn: caProdTestFunctionArn
-              },
-              lambda: testInvokeLambda,
-              runOrder: 2,
-            })
-
-          ],
-        },
+                ],
+              })
+            }, [] as codepipeline.StageProps[])
+          )
+        }, [] as codepipeline.StageProps[]),
       ],
     })
 

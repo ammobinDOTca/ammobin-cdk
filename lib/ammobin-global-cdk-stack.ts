@@ -111,7 +111,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         // todo: make this cleaner + other people can use
         acmCertRef: this.cert.certificateArn,
         names: [props.publicUrl],
-        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2018,
+        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019,
       },
       enableIpV6: true,
       comment: 'main domain for ammobin, hosts both assets and api',
