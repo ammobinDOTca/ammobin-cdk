@@ -313,7 +313,7 @@ export class AmmobinPipelineStack extends Stack {
               actions.push(new codepipeline_actions.LambdaInvokeAction({
                 actionName: `${stage}${region}IntegTests`,
                 userParameters: <PipelineInvokeUserParams>{
-                  base: `https://${stage.toLowerCase()}.ammobin.${region.toLowerCase()}`,
+                  base: `https://${stage === 'prod' ? '' : stage.toLowerCase() + '.'}ammobin.${region.toLowerCase()}`,
                   roleArn: pipelineRoles[stage][region].test.roleArn,
                   targetFunctionArn: getIntegTestArn({ stage, region }),
                   targetRegion: regionToAWSRegion(region)

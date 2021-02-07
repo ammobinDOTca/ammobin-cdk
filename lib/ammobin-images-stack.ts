@@ -5,6 +5,7 @@ import acm = require('@aws-cdk/aws-certificatemanager')
 import { Duration } from '@aws-cdk/core'
 import { LOG_RETENTION, Stage } from './constants'
 import { CfnApplication } from '@aws-cdk/aws-sam'
+import { SecurityPolicy } from '@aws-cdk/aws-apigateway'
 export class AmmobinImagesStack extends cdk.Construct {
 
 
@@ -53,6 +54,7 @@ export class AmmobinImagesStack extends cdk.Construct {
         }),
         endpointType: apigateway.EndpointType.REGIONAL,
         domainName: props.url,
+        securityPolicy: SecurityPolicy.TLS_1_2
       },
       binaryMediaTypes: ['*/*'], // lazy
       deployOptions: { stageName: 'images' }, // to match with cloudfront path pattern ;)
@@ -60,8 +62,8 @@ export class AmmobinImagesStack extends cdk.Construct {
     api.addUsagePlan('throttle', {
       description: 'dont kill the aws bill',
       throttle: {
-        burstLimit: 250,
-        rateLimit: 100
+        burstLimit: 10,
+        rateLimit: 2
       }
     })
     api.domainName
