@@ -248,9 +248,10 @@ export class AmmobinPipelineStack extends Stack {
           stageName: 'Source',
           actions: [
             new codepipeline_actions.GitHubSourceAction({
-              actionName: 'github_source',
+              actionName: 'github_source_cdk',
               owner: 'ammobinDOTca',
               repo: 'ammobin-cdk',
+              branch: 'us', // todo: restore to master once this is stable
               oauthToken,
               output: sourceOutput,
             }),
@@ -284,43 +285,49 @@ export class AmmobinPipelineStack extends Stack {
         ...stages.reduce((pipelineStages, stage) => {
           return pipelineStages.concat(
             regions.reduce((lst, region) => {
+              const actions: codepipeline.IAction[] = [
+                new codepipeline_actions.CodeBuildAction({
+                  actionName: 'cdkDeployApi',
+                  project: generateDeployToAccountBuild('deployApi', pipelineRoles[stage][region].deploy.roleArn, stage, region, 'AmmobinCdkStack'),
+                  input: cdkBuildOutput,
+                  extraInputs: [
+                    apiBuildOutput
+                  ],
+                  outputs: [],
+                  runOrder: 1
+                }),
+
+                new codepipeline_actions.CodeBuildAction({
+                  actionName: 'cdkDeployCloudFront',
+                  project: generateDeployToAccountBuild('deployCloudFront', pipelineRoles[stage][region].deploy.roleArn, stage, region, 'AmmobinGlobalCdkStack'),
+                  input: cdkBuildOutput,
+                  extraInputs: [
+                    apiBuildOutput
+                  ],
+                  outputs: [],
+                  runOrder: 1
+                }),
+
+              ]
+
+              actions.push(new codepipeline_actions.LambdaInvokeAction({
+                actionName: `${stage}${region}IntegTests`,
+                userParameters: <PipelineInvokeUserParams>{
+                  base: `https://${stage.toLowerCase()}.ammobin.${region.toLowerCase()}`,
+                  roleArn: pipelineRoles[stage][region].test.roleArn,
+                  targetFunctionArn: getIntegTestArn({ stage, region }),
+                  targetRegion: regionToAWSRegion(region)
+                },
+                lambda: testInvokeLambda,
+                runOrder: 2,
+              }))
+
+
+
               return lst.concat({
                 stageName: `Deploy${stage}${region}`,
-                actions: [
-                  new codepipeline_actions.CodeBuildAction({
-                    actionName: 'cdkDeployApi',
-                    project: generateDeployToAccountBuild('deployApi', pipelineRoles[stage][region].deploy.roleArn, stage, region, 'AmmobinCdkStack'),
-                    input: cdkBuildOutput,
-                    extraInputs: [
-                      apiBuildOutput
-                    ],
-                    outputs: [],
-                    runOrder: 1
-                  }),
+                actions,
 
-                  new codepipeline_actions.CodeBuildAction({
-                    actionName: 'cdkDeployCloudFront',
-                    project: generateDeployToAccountBuild('deployCloudFront', pipelineRoles[stage][region].deploy.roleArn, stage, region, 'AmmobinGlobalCdkStack'),
-                    input: cdkBuildOutput,
-                    extraInputs: [
-                      apiBuildOutput
-                    ],
-                    outputs: [],
-                    runOrder: 1
-                  }),
-
-                  new codepipeline_actions.LambdaInvokeAction({
-                    actionName: `${stage}${region}IntegTests`,
-                    userParameters: <PipelineInvokeUserParams>{
-                      base: `https://${stage.toLowerCase()}.ammobin.${region.toLowerCase()}`,
-                      roleArn: pipelineRoles[stage][region].test.roleArn,
-                      targetFunctionArn: getIntegTestArn({ stage, region })
-                    },
-                    lambda: testInvokeLambda,
-                    runOrder: 2,
-                  })
-
-                ],
               })
             }, [] as codepipeline.StageProps[])
           )

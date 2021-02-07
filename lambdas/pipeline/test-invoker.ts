@@ -17,7 +17,11 @@ export interface PipelineInvokeUserParams {
    * base url of site to test
    * ie: https://ammobin.ca
    */
-  base: string
+  base: string,
+  /**
+   * aws region of test lambda (ie: ca-central-1)
+   */
+  targetRegion: string
 }
 
 
@@ -26,7 +30,8 @@ export async function handler(event: CodePipelineEvent) {
   const {
     roleArn,
     targetFunctionArn,
-    base
+    base,
+    targetRegion
   } = JSON.parse(event["CodePipeline.job"].data.actionConfiguration.configuration.UserParameters) as PipelineInvokeUserParams
 
   const t = await sts.assumeRole({
@@ -43,7 +48,8 @@ export async function handler(event: CodePipelineEvent) {
       accessKeyId: t.Credentials.AccessKeyId,
       secretAccessKey: t.Credentials.SecretAccessKey,
       sessionToken: t.Credentials.SessionToken
-    }
+    },
+    region: targetRegion
   })
 
   const f = await lambda.invoke({

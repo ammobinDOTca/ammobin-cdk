@@ -14,13 +14,13 @@ export publicUrl=<your site domain aka ammobin.ca>
 npm run build
 
 (for each region + stage)
-cdk bootstrap
-cdk deploy IamStack
-cdk deploy GrafanaIamStack (optional)
+region=us-west-2 npx cdk bootstrap --profile beta-us
+region=us-west-2 site_region=US  stage=beta npx cdk deploy IamStack --profile beta-us
+cdk deploy GrafanaIamStack (optional) ?
 
-cdk deploy AmmobinPipeline
+cdk deploy AmmobinPipelineStack
 (get all AGW + CF resources)
-cdk deploy Route53
+cdk deploy Route53 (TODO not yet)
 ```
 
 ### undocumented work:
