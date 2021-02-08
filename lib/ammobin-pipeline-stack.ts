@@ -251,7 +251,7 @@ export class AmmobinPipelineStack extends Stack {
               actionName: 'github_source_cdk',
               owner: 'ammobinDOTca',
               repo: 'ammobin-cdk',
-              branch: 'us', // todo: restore to master once this is stable
+              branch: 'master', // todo: restore to master once this is stable
               oauthToken,
               output: sourceOutput,
             }),
