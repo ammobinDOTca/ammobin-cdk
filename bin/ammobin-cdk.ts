@@ -32,6 +32,7 @@ new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   env: {
     region: 'us-east-1', // cloudfront must use stuff here
   },
+  region: site_region,
   publicUrl,
   siteBucket,
   stage,

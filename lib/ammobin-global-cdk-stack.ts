@@ -2,7 +2,7 @@ import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import lambda = require('@aws-cdk/aws-lambda')
 import iam = require('@aws-cdk/aws-iam')
-import { LOG_RETENTION, Stage, REFRESH_HOURS } from './constants'
+import { LOG_RETENTION, Stage, REFRESH_HOURS, Region } from './constants'
 import { Duration } from '@aws-cdk/core'
 import { Alarm, Metric, ComparisonOperator, TreatMissingData } from '@aws-cdk/aws-cloudwatch'
 import { SnsAction } from '@aws-cdk/aws-cloudwatch-actions'
@@ -19,6 +19,7 @@ interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
   publicUrl: string,
   siteBucket: string,
   stage: Stage,
+  region: Region,
   email?: string
 }
 
@@ -105,6 +106,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
     }))
 
+    const use_github_site = props.stage === 'prod' && props.region === 'CA'
+
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
       aliasConfiguration: {
         // from output of ammobin global cdk stack in us-east-1...
@@ -134,13 +137,13 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       originConfigs: [
         {
           // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
-          s3OriginSource: props.stage !== 'prod' ? {
+          s3OriginSource: !(use_github_site) ? {
             s3BucketSource: siteBucket,
             originAccessIdentity
           } : undefined,
-          customOriginSource: props.stage === 'prod' ? {
+          customOriginSource: use_github_site ? {
             // see https://github.com/ammobinDOTca/s3-bucket
-            domainName: 'client.github.ammobin.ca'
+            domainName: `client.github.ammobin.${props.region.toLowerCase()}`
           } : undefined,
           behaviors: [
             {
@@ -165,13 +168,13 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         },
         {
           // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
-          s3OriginSource: props.stage !== 'prod' ? {
+          s3OriginSource: !use_github_site ? {
             s3BucketSource: siteBucket,
             originAccessIdentity
           } : undefined,
-          customOriginSource: props.stage === 'prod' ? {
+          customOriginSource: use_github_site ? {
             // see https://github.com/ammobinDOTca/s3-bucket
-            domainName: 'client.github.ammobin.ca'
+            domainName: `client.github.ammobin.${props.region.toLowerCase()}`
           } : undefined,
           behaviors: [
             {
