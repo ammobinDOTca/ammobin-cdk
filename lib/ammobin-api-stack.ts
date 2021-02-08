@@ -47,6 +47,7 @@ export class AmmobinApiStack extends cdk.Construct {
         }),
         endpointType: apigateway.EndpointType.REGIONAL,
         domainName: props.url,
+        securityPolicy: apigateway.SecurityPolicy.TLS_1_2
       },
       defaultCorsPreflightOptions: {
         maxAge: Duration.days(999),
@@ -58,8 +59,8 @@ export class AmmobinApiStack extends cdk.Construct {
     api.addUsagePlan('throttle', {
       description: 'dont kill the aws bill',
       throttle: {
-        burstLimit: 250,
-        rateLimit: 100
+        burstLimit: 5,
+        rateLimit: 1
       }
     })
 

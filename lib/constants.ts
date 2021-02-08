@@ -4,7 +4,7 @@ export const LOG_RETENTION = RetentionDays.ONE_WEEK
 
 export declare type Stage = 'prod' | 'beta'
 
-export declare type Region = 'CA'
+export declare type Region = 'CA' | 'US'
 
 export const serviceName = 'ammobin'
 

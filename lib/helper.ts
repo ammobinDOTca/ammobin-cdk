@@ -3,6 +3,7 @@ import { ILogGroup, LogGroup } from '@aws-cdk/aws-logs'
 import cdk = require('@aws-cdk/core')
 import Lambda = require('@aws-cdk/aws-lambda')
 import * as iam from '@aws-cdk/aws-iam'
+import { Region, Stage } from './constants'
 /**
  *
  * @param stack
@@ -31,4 +32,37 @@ export function exportLambdaLogsToLogger(stack: cdk.Stack, lambda: Lambda.Functi
   })
 
   return logGroup
+}
+
+
+export function regionToAWSRegion(region: Region): string {
+  switch (region) {
+    case 'CA':
+      return 'ca-central-1'
+    case 'US':
+      return 'us-west-2'
+    default:
+      throw 'unknown region: ' + region
+  }
+}
+
+
+export function getAccountForRegionAndStage(region: Region, stage: Stage): string {
+  switch (region) {
+    case 'CA':
+      switch (stage) {
+        case 'beta':
+          return '652374912961'
+        case 'prod':
+          return '968559063536'
+      }
+    case 'US':
+      switch (stage) {
+        case 'beta':
+          return '734748381677'
+        case 'prod':
+          return '350712191526'
+      }
+  }
+  throw 'unknown region+stage: ' + region + ' ' + stage
 }

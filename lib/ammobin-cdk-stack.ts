@@ -17,7 +17,7 @@ import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
 import { AmmobinApiStack } from './ammobin-api-stack'
 import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS } from './constants'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
-import { exportLambdaLogsToLogger } from './helper'
+import { exportLambdaLogsToLogger, regionToAWSRegion } from './helper'
 import { AmmobinImagesStack } from './ammobin-images-stack'
 
 interface IAmmobinCdkStackProps extends cdk.StackProps {
@@ -38,6 +38,9 @@ export class AmmobinCdkStack extends cdk.Stack {
     const TABLE_NAME = 'ammobinItems'
     const HASH_SECRET = 'TODO-REAL-SECRET' //
     const STAGE = props.stage
+
+    // are we live in production?
+    const is_prod_enabled = STAGE === 'prod' && this.region === regionToAWSRegion('CA')
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: TABLE_NAME,
@@ -118,7 +121,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const refreshCron = new events.Rule(this, 'referesher', {
       description: 'refresh all prices in dynamo',
       schedule: events.Schedule.rate(Duration.hours(REFRESH_HOURS)),
-      enabled: props.stage === 'prod' // don't run the full cron schedule for beta (todo: have refresher only do a small subset)
+      enabled: is_prod_enabled // don't run the full cron schedule for beta (todo: have refresher only do a small subset)
     })
     refresherLambda.addEventSource(new CloudwatchScheduleEvent(refreshCron))
 
@@ -152,7 +155,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     itemsTable.grantWriteData(largeMemoryWorkerLambda)
 
     // manually set the value of this secret once created
-    const esUrlSecret = STAGE === "prod" ?
+    const esUrlSecret = is_prod_enabled ?
       new Secret(this, 'esUrlSecret', {
         description: 'url with user + pass to send logs to. should be in the form https://user:password@example.com',
       }) : null
@@ -172,7 +175,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       logRetention: RetentionDays.THREE_DAYS,
       description: 'moves logs from cloudwatch to elasticsearch'
     })
-    if (STAGE === "prod") {
+    if (is_prod_enabled) {
       esUrlSecret?.grantRead(logExporter)
     }
     logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: this.region }))
@@ -242,7 +245,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       al4xx.addAlarmAction(new SnsAction(emailMe))
 
       // only alarm on low traffic on prod....
-      if (props.stage === 'prod') {
+      if (is_prod_enabled) {
         // alarms
         const lowTrafficAlarm = new Alarm(this, 'lowTrafficApi', {
           datapointsToAlarm: 6,
@@ -282,7 +285,8 @@ export class AmmobinCdkStack extends cdk.Stack {
       description: 'listens to queue of scrape tasks and performs a search and stores the result in the db',
       layers: [
         //https://github.com/shelfio/chrome-aws-lambda-layer
-        lambda.LayerVersion.fromLayerVersionArn(this, name + 'shelfio_chrome-aws-lambda-layer', 'arn:aws:lambda:ca-central-1:764866452798:layer:chrome-aws-lambda:8')
+        lambda.LayerVersion.fromLayerVersionArn(this, name + 'shelfio_chrome-aws-lambda-layer',
+          `arn:aws:lambda:${this.region}:764866452798:layer:chrome-aws-lambda:20`)
       ]
     })
     workerLambda.addEventSource(new SqsEventSource(queue))
