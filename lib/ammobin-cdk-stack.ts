@@ -192,6 +192,7 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     [
       workerLambda,
+      largeMemoryWorkerLambda,
       refresherLambda,
       api.lambda,
       api.graphqlLambda,
