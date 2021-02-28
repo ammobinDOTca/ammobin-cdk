@@ -55,10 +55,10 @@ import axios from 'axios'
 // }
 const sm = new SecretsManager()
 
-
+const region = process.env.region || 'unknown'
 function post(url: URL, body) {
   //https://docs.fluentd.org/input/http#how-to-use-http-content-type-header
-  url.pathname = '/ammobin.ca-aws'
+  url.pathname = `/ammobin.${region?.toLowerCase()}-aws`
   return axios.post(url.toString(), body)
 }
 export async function handler(event: CloudWatchLogsEvent) {

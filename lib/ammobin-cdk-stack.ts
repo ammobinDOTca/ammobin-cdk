@@ -39,6 +39,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const TABLE_NAME = 'ammobinItems'
     const HASH_SECRET = 'TODO-REAL-SECRET' //
     const STAGE = props.stage
+    const REGION = props.region // site's region
 
     // are we live in production?
     const is_prod_enabled = STAGE === 'prod' && this.region === regionToAWSRegion('CA')
@@ -69,6 +70,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         DONT_LOG_CONSOLE,
         HASH_SECRET,
         STAGE,
+        REGION,
       },
     })
 
@@ -112,7 +114,8 @@ export class AmmobinCdkStack extends cdk.Stack {
         LargeMemorySNSArn: largeMemoryTopic.topicArn,
         NODE_ENV,
         STAGE,
-        DONT_LOG_CONSOLE
+        DONT_LOG_CONSOLE,
+        REGION
       },
       logRetention: RetentionDays.ONE_MONTH,
       description: 'invoked by cloudwatch scheduled event to trigger all the of the scrape tasks'
@@ -139,6 +142,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       NODE_ENV,
       STAGE,
       DONT_LOG_CONSOLE,
+      REGION,
       'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
     }, workQueue, workTopic, Duration.minutes(3), workerCode, 1024)
 
@@ -148,6 +152,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       NODE_ENV,
       STAGE,
       DONT_LOG_CONSOLE,
+      REGION,
       'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
     }, largeMemoryQueue, largeMemoryTopic, Duration.minutes(5), workerCode, 3008)
 
@@ -171,6 +176,7 @@ export class AmmobinCdkStack extends cdk.Stack {
         NODE_ENV,
         STAGE,
         DONT_LOG_CONSOLE,
+        REGION,
         ES_URL_SECRET_ID: esUrlSecret?.secretArn || ''
       },
       logRetention: RetentionDays.THREE_DAYS,
