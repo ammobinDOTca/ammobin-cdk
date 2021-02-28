@@ -15,7 +15,7 @@ import { Topic, } from '@aws-cdk/aws-sns'
 import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
 
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS } from './constants'
+import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS, Region } from './constants'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { exportLambdaLogsToLogger, regionToAWSRegion } from './helper'
 import { AmmobinImagesStack } from './ammobin-images-stack'
@@ -25,6 +25,7 @@ interface IAmmobinCdkStackProps extends cdk.StackProps {
   stage: Stage,
   apiCode?: string,
   email?: string
+  region: Region
 }
 
 export class AmmobinCdkStack extends cdk.Stack {
@@ -53,7 +54,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       timeToLiveAttribute: 'ttl'
     })
 
-    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage })
+    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage, region: props.region })
     const CODE_BASE = (props.apiCode || '../ammobin-api') + '/lambda/'
     console.log('CODE_BASE', CODE_BASE, props)
     const apiName = 'apiLambda'

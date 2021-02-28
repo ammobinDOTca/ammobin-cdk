@@ -3,6 +3,20 @@ import { resize } from 'imagemagick'
 import { get as getHttp } from 'http'
 import { get as getHttps } from 'https'
 import { fstat } from 'fs'
+
+const { stage, region } = process.env
+let DOMAIN = ''
+if (stage === 'beta') {
+  DOMAIN = 'beta.'
+}
+if (region === 'CA') {
+  DOMAIN += 'ammobin.ca'
+} else if (region === 'US') {
+  DOMAIN += 'ammobin.us'
+} else {
+  throw new Error('unknown region:' + region)
+}
+
 async function resizeImage(url: string, width: number): Promise<{ contentType: string, body: any }> {
   const { srcData, contentType } = await new Promise((resolve, reject) => (url.startsWith('https') ? getHttps : getHttp)(url, (res) => {
     // todo: assert content type + size + timeouts
@@ -50,7 +64,7 @@ export async function handler(event: APIGatewayEvent) {
 
   const { Referrer } = event.headers;
   //todo: make this configurable....
-  if (Referrer && !['ammobin.ca', 'localhost', '127.0.0.1'].some(allowedDomain =>
+  if (Referrer && ![DOMAIN, 'localhost', '127.0.0.1'].some(allowedDomain =>
     Referrer.endsWith(allowedDomain))) {
     return <APIGatewayProxyResult>{
       statusCode: 403,
@@ -83,7 +97,16 @@ export async function handler(event: APIGatewayEvent) {
   } catch (e) {
     console.error(e)
     if (e && e.statusCode) {
-      return e // handled invalid request
+      // return e // handled invalid request
+      // return jnk to avoid repeat calls jacking up my cloudfront bill
+      return <APIGatewayProxyResult>{
+        statusCode: 204,
+        headers: {
+          'Content-Type': 'application/text',
+          'Cache-Control': 'max-age=31536000'
+        },
+        body: ''
+      }
     } else {
       throw e
     }

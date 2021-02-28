@@ -47,7 +47,8 @@ new AmmobinCdkStack(app, 'AmmobinCdkStack', {
   publicUrl,
   stage,
   apiCode,
-  email
+  email,
+  region: site_region
 })
 
 /**

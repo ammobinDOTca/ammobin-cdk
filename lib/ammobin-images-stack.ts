@@ -3,7 +3,7 @@ import apigateway = require('@aws-cdk/aws-apigateway')
 import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import { Duration } from '@aws-cdk/core'
-import { LOG_RETENTION, Stage } from './constants'
+import { LOG_RETENTION, Region, Stage } from './constants'
 import { CfnApplication } from '@aws-cdk/aws-sam'
 import { SecurityPolicy } from '@aws-cdk/aws-apigateway'
 export class AmmobinImagesStack extends cdk.Construct {
@@ -14,7 +14,8 @@ export class AmmobinImagesStack extends cdk.Construct {
     id: string,
     props: {
       url: string,
-      stage: Stage
+      stage: Stage,
+      region: Region
     }
   ) {
     super(scope, id)
@@ -34,6 +35,8 @@ export class AmmobinImagesStack extends cdk.Construct {
       runtime: lambda.Runtime.NODEJS_12_X,
       environment: {
         production: 'true',
+        region: props.region,
+        stage: props.stage,
         'NODE_OPTIONS': '--tls-min-v1.1' // allow more certs to connect (as of nov 2019)
       },
       timeout: Duration.seconds(30),
