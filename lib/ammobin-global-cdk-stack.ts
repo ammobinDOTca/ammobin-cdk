@@ -106,7 +106,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
     }))
 
-    const use_github_site = props.stage === 'prod' && props.region === 'CA'
+    const use_github_site = props.stage === 'prod' //&& props.region === 'CA'
 
     const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
       aliasConfiguration: {
