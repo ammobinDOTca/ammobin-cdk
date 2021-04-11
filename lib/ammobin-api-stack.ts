@@ -75,7 +75,7 @@ export class AmmobinApiStack extends cdk.Construct {
       timeout: Duration.seconds(30),
       memorySize: 192,
       environment: props.environment,
-      logRetention: LOG_RETENTION
+      logRetention: LOG_RETENTION,
     })
     this.graphqlLambda = graphqlLambda
     clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda), {
