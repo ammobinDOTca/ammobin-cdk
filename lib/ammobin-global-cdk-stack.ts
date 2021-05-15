@@ -2,7 +2,7 @@ import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import lambda = require('@aws-cdk/aws-lambda')
 import iam = require('@aws-cdk/aws-iam')
-import { LOG_RETENTION, Stage, REFRESH_HOURS, Region } from './constants'
+import { LOG_RETENTION, Stage, REFRESH_HOURS, Region, RUNTIME } from './constants'
 import { Duration } from '@aws-cdk/core'
 import { Alarm, Metric, ComparisonOperator, TreatMissingData } from '@aws-cdk/aws-cloudwatch'
 import { SnsAction } from '@aws-cdk/aws-cloudwatch-actions'
@@ -54,7 +54,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const nuxtRerouter = new lambda.Function(this, 'nuxtRerouter', {
       code: apiCode,
       handler: 'nuxt-rerouter.handler',
-      runtime: lambda.Runtime.NODEJS_12_X,
+      runtime: RUNTIME,
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,
@@ -65,7 +65,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const securityHeaders = new lambda.Function(this, 'securityHeaders', {
       code: apiCode,
       handler: 'security-headers.handler',
-      runtime: lambda.Runtime.NODEJS_12_X,
+      runtime: RUNTIME,
       environment: {},
       timeout: Duration.seconds(3),
       role: lambdaRole,

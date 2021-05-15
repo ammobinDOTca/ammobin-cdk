@@ -9,7 +9,7 @@ import { Function, Runtime, AssetCode } from '@aws-cdk/aws-lambda'
 import { PolicyStatement, Role, ManagedPolicy, ServicePrincipal } from '@aws-cdk/aws-iam'
 
 import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole'
-import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants'
+import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME, RUNTIME } from './constants'
 import { PipelineInvokeUserParams } from '../lambdas/pipeline/test-invoker'
 import { getAccountForRegionAndStage, regionToAWSRegion } from './helper'
 
@@ -27,7 +27,7 @@ export class AmmobinPipelineStack extends Stack {
     super(app, id, props)
 
     const API_SOURCE = 'ammobinApi'
-    const nodejs = 12
+    const nodejs = 14
     const buildImage = codebuild.LinuxBuildImage.STANDARD_3_0
     const CDK_BUILD_OUT = 'CdkBuildOutput'
     const API_BUILD_OUT = 'ApiBuildOutput'
@@ -225,7 +225,7 @@ export class AmmobinPipelineStack extends Stack {
 
     const testInvokeLambda = new Function(this, 'pipelineTestInvoker', {
       role: lambdaAssumeRole,
-      runtime: Runtime.NODEJS_12_X,
+      runtime: RUNTIME,
       timeout: Duration.minutes(5),
       logRetention: LOG_RETENTION,
       handler: 'test-invoker.handler',
