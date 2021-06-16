@@ -294,7 +294,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       layers: [
         //https://github.com/shelfio/chrome-aws-lambda-layer
         lambda.LayerVersion.fromLayerVersionArn(this, name + 'shelfio_chrome-aws-lambda-layer',
-          `arn:aws:lambda:${this.region}:764866452798:layer:chrome-aws-lambda:20`)
+          `arn:aws:lambda:${this.region}:764866452798:layer:chrome-aws-lambda:24`)
       ]
     })
     workerLambda.addEventSource(new SqsEventSource(queue))
