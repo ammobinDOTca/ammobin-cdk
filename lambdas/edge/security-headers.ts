@@ -15,11 +15,11 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
     //# Disallow the site to be rendered within a frame(clickjacking protection)
     'x-frame-options': [{ key: 'X-Frame-Options', value: "DENY" }],
     // something is breaking the load when landing on item list page in july 2021
-    'content-security-policy-report-only': [{
-      key: 'Content-Security-Policy',
-      // todo: serve workbox myself
-      value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self' https://store-udt1amkaxd.mybigcommerce.com;" //  report-uri https://ammobin.ca/api/content-security-report-uri" // dont bother reporting this, noise is not worth the bill
-    }],
+    // 'content-security-policy-report-only': [{
+    //   key: 'Content-Security-Policy',
+    //   // todo: serve workbox myself
+    //   value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self' https://store-udt1amkaxd.mybigcommerce.com;" //  report-uri https://ammobin.ca/api/content-security-report-uri" // dont bother reporting this, noise is not worth the bill
+    // }],
     'referrer-policy': [{ key: 'Referrer-policy', value: 'origin' }],
     ...response.headers
   }
