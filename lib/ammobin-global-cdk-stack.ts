@@ -108,119 +108,220 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     const use_github_site = props.stage === 'prod' //&& props.region === 'CA'
 
-    const distribution = new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-      aliasConfiguration: {
-        // from output of ammobin global cdk stack in us-east-1...
-        // todo: make this cleaner + other people can use
-        acmCertRef: this.cert.certificateArn,
-        names: [props.publicUrl],
-        securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2019,
-      },
-      enableIpV6: true,
-      comment: 'main domain for ammobin, hosts both assets and api',
-      httpVersion: cloudfront.HttpVersion.HTTP2,
-      priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
-      errorConfigurations: [
-        {
-          errorCode: 403,
-          responseCode: 403,
-          responsePagePath: '/200.html',
-          errorCachingMinTtl: 60 * 5 // 5mins
+    const distribution = use_github_site ?
+      new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+        aliasConfiguration: {
+          // from output of ammobin global cdk stack in us-east-1...
+          // todo: make this cleaner + other people can use
+          acmCertRef: this.cert.certificateArn,
+          names: [props.publicUrl],
+          securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
         },
-        {
-          errorCode: 404,
-          responseCode: 404,
-          responsePagePath: '/200.html',
-          errorCachingMinTtl: 60 * 30 // 30mins
-        }
-      ],
-      originConfigs: [
-        {
-          // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
-          s3OriginSource: !(use_github_site) ? {
-            s3BucketSource: siteBucket,
-            originAccessIdentity
-          } : undefined,
-          customOriginSource: use_github_site ? {
-            // see https://github.com/ammobinDOTca/s3-bucket
-            domainName: `client.github.ammobin.${props.region.toLowerCase()}`
-          } : undefined,
-          behaviors: [
-            {
-              lambdaFunctionAssociations: [
-                {
-                  eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
-                  lambdaFunction: nuxtRerouterVersion,
-                },
-                {
-                  eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-                  lambdaFunction: securityHeadersVersion
-                },
-              ],
-              forwardedValues: {
-                queryString: true, // need to be able to redirect old urls to new ones
-              },
-              isDefaultBehavior: true,
-              defaultTtl: Duration.days(365),
-              minTtl: Duration.days(REFRESH_HOURS / 24), // want to make sure that updated pages get sent (refreshing once a day now)
-            },
-          ],
-        },
-        {
-          // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
-          s3OriginSource: !use_github_site ? {
-            s3BucketSource: siteBucket,
-            originAccessIdentity
-          } : undefined,
-          customOriginSource: use_github_site ? {
-            // see https://github.com/ammobinDOTca/s3-bucket
-            domainName: `client.github.ammobin.${props.region.toLowerCase()}`
-          } : undefined,
-          behaviors: [
-            {
-              pathPattern: '_nuxt/*',
-              defaultTtl: Duration.days(365),
-              minTtl: Duration.days(365),
-            },
-          ],
-        },
-        // route api requests to the api lambda + gateway
-        {
-          customOriginSource: {
-            domainName: 'api.' + props.publicUrl
+        enableIpV6: true,
+        comment: 'main domain for ammobin, hosts both assets and api',
+        httpVersion: cloudfront.HttpVersion.HTTP2,
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+        errorConfigurations: [
+          {
+            errorCode: 403,
+            responseCode: 403,
+            responsePagePath: '/200.html',
+            errorCachingMinTtl: 60 * 5 // 5mins
           },
-          behaviors: [
-            {
-              isDefaultBehavior: false,
-              pathPattern: 'api/*',
-              forwardedValues: {
-                queryString: true,
+          {
+            errorCode: 404,
+            responseCode: 404,
+            responsePagePath: '/200.html',
+            errorCachingMinTtl: 60 * 30 // 30mins
+          }
+        ],
+        originConfigs: [
+          {
+            // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
+            s3OriginSource: !(use_github_site) ? {
+              s3BucketSource: siteBucket,
+              originAccessIdentity
+            } : undefined,
+            customOriginSource: use_github_site ? {
+              // see https://github.com/ammobinDOTca/s3-bucket
+              domainName: `client.github.ammobin.${props.region.toLowerCase()}`
+            } : undefined,
+            behaviors: [
+              {
+                lambdaFunctionAssociations: [
+                  {
+                    eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
+                    lambdaFunction: nuxtRerouterVersion,
+                  },
+                  {
+                    eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
+                    lambdaFunction: securityHeadersVersion
+                  },
+                ],
+                forwardedValues: {
+                  queryString: true, // need to be able to redirect old urls to new ones
+                },
+                isDefaultBehavior: true,
+                defaultTtl: Duration.days(365),
+                minTtl: Duration.days(REFRESH_HOURS / 24), // want to make sure that updated pages get sent (refreshing once a day now)
               },
-              allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
-              cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
-              defaultTtl: Duration.days(REFRESH_HOURS / 24),
-              minTtl: Duration.minutes(30),
-            },
-          ],
-        },
-        // image proxy, cache for a year...
-        {
-          customOriginSource: {
-            domainName: 'images.' + props.publicUrl
+            ],
           },
-          behaviors: [
-            {
-              isDefaultBehavior: false,
-              pathPattern: 'images/*',
-              allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
-              cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD,
-              defaultTtl: Duration.days(365),
-              minTtl: Duration.days(365),
+          {
+            // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
+            s3OriginSource: !use_github_site ? {
+              s3BucketSource: siteBucket,
+              originAccessIdentity
+            } : undefined,
+            customOriginSource: use_github_site ? {
+              // see https://github.com/ammobinDOTca/s3-bucket
+              domainName: `client.github.ammobin.${props.region.toLowerCase()}`
+            } : undefined,
+            behaviors: [
+              {
+                pathPattern: '_nuxt/*',
+                defaultTtl: Duration.days(365),
+                minTtl: Duration.days(365),
+              },
+            ],
+          },
+          // route api requests to the api lambda + gateway
+          {
+            customOriginSource: {
+              domainName: 'api.' + props.publicUrl
             },
-          ],
+            behaviors: [
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'api/*',
+                forwardedValues: {
+                  queryString: true,
+                },
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
+                cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                defaultTtl: Duration.days(REFRESH_HOURS / 24),
+                minTtl: Duration.minutes(30),
+              },
+            ],
+          },
+          // image proxy, cache for a year...
+          {
+            customOriginSource: {
+              domainName: 'images.' + props.publicUrl
+            },
+            behaviors: [
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'images/*',
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+                cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD,
+                defaultTtl: Duration.days(365),
+                minTtl: Duration.days(365),
+              },
+            ],
+          },
+        ],
+      }) :
+      // beta -> use cloudflare worker for main, will switch all to this once complete
+      new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+        aliasConfiguration: {
+          // from output of ammobin global cdk stack in us-east-1...
+          // todo: make this cleaner + other people can use
+          acmCertRef: this.cert.certificateArn,
+          names: [props.publicUrl],
+          securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
         },
-      ],
-    })
+        enableIpV6: true,
+        comment: 'main domain for ammobin, hosts both assets and api',
+        httpVersion: cloudfront.HttpVersion.HTTP2,
+        priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
+        errorConfigurations: [
+          {
+            errorCode: 403,
+            responseCode: 403,
+            responsePagePath: '/200.html',
+            errorCachingMinTtl: 60 * 5 // 5mins
+          },
+          {
+            errorCode: 404,
+            responseCode: 404,
+            responsePagePath: '/200.html',
+            errorCachingMinTtl: 60 * 30 // 30mins
+          }
+        ],
+        originConfigs: [
+          {
+            customOriginSource: {
+              domainName: `ammobin_nuxt_v3.ammobin.workers.dev` // todo: publish beta + region specific workers
+            },
+            behaviors: [
+              {
+                lambdaFunctionAssociations: [
+                  {
+                    eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
+                    lambdaFunction: securityHeadersVersion
+                  },
+                ],
+                forwardedValues: {
+                  queryString: true, // need to be able to redirect old urls to new ones
+                },
+                isDefaultBehavior: true,
+                // todo: consider if this makes sense. might want edge lambda to set
+                defaultTtl: Duration.days(1),
+                minTtl: Duration.days(1), // want to make sure that updated pages get sent (refreshing once a day now)
+              },
+            ],
+          },
+          {
+            // enforce much higher TTL on webassets from worker to keep down uneeded traffic
+            customOriginSource: {
+              domainName: `ammobin_nuxt_v3.ammobin.workers.dev` // todo: publish beta + region specific workers
+            },
+            behaviors: [
+              {
+                pathPattern: '_nuxt/*',
+                defaultTtl: Duration.days(365),
+                minTtl: Duration.days(365),
+              },
+            ],
+          },
+          // route api requests to the api lambda + gateway
+          {
+            customOriginSource: {
+              domainName: 'api.' + props.publicUrl
+            },
+            behaviors: [
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'api/*',
+                forwardedValues: {
+                  queryString: true,
+                },
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
+                cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                defaultTtl: Duration.days(REFRESH_HOURS / 24),
+                minTtl: Duration.minutes(30),
+              },
+            ],
+          },
+          // image proxy, cache for a year...
+          {
+            customOriginSource: {
+              domainName: 'images.' + props.publicUrl
+            },
+            behaviors: [
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'images/*',
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+                cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD,
+                defaultTtl: Duration.days(365),
+                minTtl: Duration.days(365),
+              },
+            ],
+          },
+        ],
+      })
 
 
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId })
