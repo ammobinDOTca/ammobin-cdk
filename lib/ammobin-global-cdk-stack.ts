@@ -254,7 +254,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         originConfigs: [
           {
             customOriginSource: {
-              domainName: `ammobin_nuxt_${this.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
+              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
             },
             behaviors: [
               {
@@ -277,7 +277,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           {
             // enforce much higher TTL on webassets from worker to keep down uneeded traffic
             customOriginSource: {
-              domainName: `ammobin_nuxt_${this.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
+              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
             },
             behaviors: [
               {
