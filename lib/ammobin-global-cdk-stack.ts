@@ -224,7 +224,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       }) :
       // beta -> use cloudflare worker for main, will switch all to this once complete
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-        defaultRootObject: '',
+        defaultRootObject: '', // cloudflare handles this internally for us
         aliasConfiguration: {
           // from output of ammobin global cdk stack in us-east-1...
           // todo: make this cleaner + other people can use
@@ -237,6 +237,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         httpVersion: cloudfront.HttpVersion.HTTP2,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         errorConfigurations: [
+          // TODO: fix this? cloudflare is breaking on 404, and sending back their error page
           {
             errorCode: 403,
             responseCode: 403,
@@ -253,7 +254,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         originConfigs: [
           {
             customOriginSource: {
-              domainName: `ammobin_nuxt_v3.ammobin.workers.dev` // todo: publish beta + region specific workers
+              domainName: `ammobin_nuxt_${this.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
             },
             behaviors: [
               {
@@ -276,7 +277,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           {
             // enforce much higher TTL on webassets from worker to keep down uneeded traffic
             customOriginSource: {
-              domainName: `ammobin_nuxt_v3.ammobin.workers.dev` // todo: publish beta + region specific workers
+              domainName: `ammobin_nuxt_${this.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
             },
             behaviors: [
               {

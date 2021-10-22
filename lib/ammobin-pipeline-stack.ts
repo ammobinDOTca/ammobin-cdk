@@ -19,6 +19,7 @@ export interface PipelineStackProps extends StackProps {
   stages: Stage[]
 
 }
+// todo add client build + cloudflare worker publish
 
 export class AmmobinPipelineStack extends Stack {
   //https://winterwindsoftware.com/serverless-cicd-pipelines-with-aws-cdk/
@@ -262,6 +263,7 @@ export class AmmobinPipelineStack extends Stack {
               oauthToken,
               output: apiSourceOutput
             })
+            // todo add client pkg
           ],
         },
         {
@@ -280,6 +282,7 @@ export class AmmobinPipelineStack extends Stack {
               ],
             }),
             // 20200105 todo: build client + put in s3 sitebucket for NON-prod...
+            // todo wrangler build
           ],
         },
         ...stages.reduce((pipelineStages, stage) => {
@@ -308,6 +311,7 @@ export class AmmobinPipelineStack extends Stack {
                   runOrder: 1
                 }),
 
+                // todo wrangler publish
               ]
 
               actions.push(new codepipeline_actions.LambdaInvokeAction({
