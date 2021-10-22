@@ -224,6 +224,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       }) :
       // beta -> use cloudflare worker for main, will switch all to this once complete
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+        defaultRootObject: '',
         aliasConfiguration: {
           // from output of ammobin global cdk stack in us-east-1...
           // todo: make this cleaner + other people can use
@@ -267,8 +268,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 },
                 isDefaultBehavior: true,
                 // todo: consider if this makes sense. might want edge lambda to set
-                defaultTtl: Duration.days(1),
-                minTtl: Duration.days(1), // want to make sure that updated pages get sent (refreshing once a day now)
+                defaultTtl: Duration.hours(4),
+                minTtl: Duration.hours(4), // want to make sure that updated pages get sent (refreshing once a day now)
               },
             ],
           },
@@ -288,6 +289,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           // route api requests to the api lambda + gateway
           {
             customOriginSource: {
+              // todo: use cloudflare worker proxy....then have workers store in cloudflare r2 + kv
               domainName: 'api.' + props.publicUrl
             },
             behaviors: [
