@@ -3,7 +3,7 @@ import apigateway = require('@aws-cdk/aws-apigateway')
 import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import { Duration } from '@aws-cdk/core'
-import { LOG_RETENTION } from './constants'
+import { LOG_RETENTION, RUNTIME } from './constants'
 
 export class AmmobinApiStack extends cdk.Construct {
   // shit we expose
@@ -29,7 +29,7 @@ export class AmmobinApiStack extends cdk.Construct {
     const apiLambda = new lambda.Function(this, props.name + 'Lambda', {
       code: new lambda.AssetCode(props.CODE_BASE + 'api'),
       handler: 'api.handler',
-      runtime: lambda.Runtime.NODEJS_12_X,
+      runtime: RUNTIME,
       environment: props.environment,
       timeout: Duration.seconds(3),
       logRetention: LOG_RETENTION
@@ -71,7 +71,7 @@ export class AmmobinApiStack extends cdk.Construct {
     const graphqlLambda = new lambda.Function(this, 'graphql', {
       code: new lambda.AssetCode(props.CODE_BASE + 'graphql'),
       handler: 'graphql.handler',
-      runtime: lambda.Runtime.NODEJS_12_X,
+      runtime: RUNTIME,
       timeout: Duration.seconds(30),
       memorySize: 192,
       environment: props.environment,

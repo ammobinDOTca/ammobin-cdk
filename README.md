@@ -46,9 +46,9 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 ---
 
 # open todos
+arm lambdas
 
-finish pipeline
-do route53 stack
+do route53 stack -> move to cloudflare instead?
 revisit cache headers
 
 ## doc

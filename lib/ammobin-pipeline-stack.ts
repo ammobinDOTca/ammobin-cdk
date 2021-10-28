@@ -9,7 +9,7 @@ import { Function, Runtime, AssetCode } from '@aws-cdk/aws-lambda'
 import { PolicyStatement, Role, ManagedPolicy, ServicePrincipal } from '@aws-cdk/aws-iam'
 
 import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole'
-import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME } from './constants'
+import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME, RUNTIME } from './constants'
 import { PipelineInvokeUserParams } from '../lambdas/pipeline/test-invoker'
 import { getAccountForRegionAndStage, regionToAWSRegion } from './helper'
 
@@ -19,6 +19,7 @@ export interface PipelineStackProps extends StackProps {
   stages: Stage[]
 
 }
+// todo add client build + cloudflare worker publish
 
 export class AmmobinPipelineStack extends Stack {
   //https://winterwindsoftware.com/serverless-cicd-pipelines-with-aws-cdk/
@@ -27,7 +28,7 @@ export class AmmobinPipelineStack extends Stack {
     super(app, id, props)
 
     const API_SOURCE = 'ammobinApi'
-    const nodejs = 12
+    const nodejs = 14
     const buildImage = codebuild.LinuxBuildImage.STANDARD_3_0
     const CDK_BUILD_OUT = 'CdkBuildOutput'
     const API_BUILD_OUT = 'ApiBuildOutput'
@@ -225,7 +226,7 @@ export class AmmobinPipelineStack extends Stack {
 
     const testInvokeLambda = new Function(this, 'pipelineTestInvoker', {
       role: lambdaAssumeRole,
-      runtime: Runtime.NODEJS_12_X,
+      runtime: RUNTIME,
       timeout: Duration.minutes(5),
       logRetention: LOG_RETENTION,
       handler: 'test-invoker.handler',
@@ -262,6 +263,7 @@ export class AmmobinPipelineStack extends Stack {
               oauthToken,
               output: apiSourceOutput
             })
+            // todo add client pkg
           ],
         },
         {
@@ -280,6 +282,7 @@ export class AmmobinPipelineStack extends Stack {
               ],
             }),
             // 20200105 todo: build client + put in s3 sitebucket for NON-prod...
+            // todo wrangler build
           ],
         },
         ...stages.reduce((pipelineStages, stage) => {
@@ -308,6 +311,7 @@ export class AmmobinPipelineStack extends Stack {
                   runOrder: 1
                 }),
 
+                // todo wrangler publish
               ]
 
               actions.push(new codepipeline_actions.LambdaInvokeAction({

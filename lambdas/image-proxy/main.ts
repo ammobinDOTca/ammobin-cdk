@@ -24,12 +24,12 @@ async function resizeImage(url: string, width: number): Promise<{ contentType: s
     const contentType = res.headers["content-type"] || 'content-type not set'
 
     if (!['image/png', 'image/jpeg', 'image/jpg'].includes(contentType)) {
-      res.resume();
+      res.resume()
       return reject({ statusCode: 400, body: 'invalid content-type: ' + contentType })
     }
-    const { statusCode } = res;
+    const { statusCode } = res
     if (statusCode !== 200) {
-      res.resume();
+      res.resume()
       return reject({ statusCode: 502, body: 'non-200 HTTP response received: ' + statusCode })
     }
 
@@ -62,7 +62,7 @@ async function resizeImage(url: string, width: number): Promise<{ contentType: s
 export async function handler(event: APIGatewayEvent) {
   console.log(JSON.stringify(event))
 
-  const { Referrer } = event.headers;
+  const { Referrer } = event.headers
   //todo: make this configurable....
   if (Referrer && ![DOMAIN, 'localhost', '127.0.0.1'].some(allowedDomain =>
     Referrer.endsWith(allowedDomain))) {
@@ -94,7 +94,7 @@ export async function handler(event: APIGatewayEvent) {
       body,
       isBase64Encoded: true
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error(e)
     if (e && e.statusCode) {
       // return e // handled invalid request

@@ -3,7 +3,7 @@ import apigateway = require('@aws-cdk/aws-apigateway')
 import cdk = require('@aws-cdk/core')
 import acm = require('@aws-cdk/aws-certificatemanager')
 import { Duration } from '@aws-cdk/core'
-import { LOG_RETENTION, Region, Stage } from './constants'
+import { LOG_RETENTION, Region, RUNTIME, Stage } from './constants'
 import { CfnApplication } from '@aws-cdk/aws-sam'
 import { SecurityPolicy } from '@aws-cdk/aws-apigateway'
 export class AmmobinImagesStack extends cdk.Construct {
@@ -32,7 +32,7 @@ export class AmmobinImagesStack extends cdk.Construct {
     const apiLambda = new lambda.Function(this, name + 'Lambda', {
       code,
       handler: 'main.handler',
-      runtime: lambda.Runtime.NODEJS_12_X,
+      runtime: RUNTIME,
       environment: {
         production: 'true',
         region: props.region,
