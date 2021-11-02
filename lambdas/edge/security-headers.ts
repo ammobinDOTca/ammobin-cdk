@@ -25,22 +25,20 @@ export function handler(event: CloudFrontResponseEvent, context: Context, cb: Ca
   }
 
   // set custom cache age for generated html pages (want to only cache for up to 24hrs until we regenerate the page)
-  // nuxt-rerouter should append .html for the pages that need it for finding the page in s3
-  if (event.Records[0].cf.request.uri.endsWith('.html')) {
-    // pages get regenerated at 12am UTC
-    const now = new Date()
-    // only cache for prod
-    // todo: this will have to be updated if more stages are created....
-    const isProd = !request.origin?.custom?.domainName.includes('beta')
-    console.log(`isProd ${isProd} for ${request.origin?.custom?.domainName}`)
-    const maxAge = isProd ?
-      Math.max(((24 - now.getUTCHours()) * 60 * 60) + ((60 - now.getUTCMinutes()) * 60) + (60 - now.getUTCSeconds()), 2) :
-      1
-    response.headers['cache-control'] = [{
-      key: 'Cache-Control',
-      value: 'max-age=' + maxAge
-    }]
-  }
+  //if (event.Records[0].cf.request.uri.endsWith('.html')) {
+  // pages get regenerated at 12am UTC
+  const now = new Date()
+  // only cache for prod
+  // todo: this will have to be updated if more stages are created....
+  const isProd = !request.origin?.custom?.domainName.includes('beta')
+  console.log(`isProd ${isProd} for ${request.origin?.custom?.domainName}`)
+  const maxAge = isProd ?
+    Math.max(((24 - now.getUTCHours()) * 60 * 60) + ((60 - now.getUTCMinutes()) * 60) + (60 - now.getUTCSeconds()), 2) :
+    1
+  response.headers['cache-control'] = [{
+    key: 'Cache-Control',
+    value: 'max-age=' + maxAge
+  }]
 
   cb(null, response)
 }

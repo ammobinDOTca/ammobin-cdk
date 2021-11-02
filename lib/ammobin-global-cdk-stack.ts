@@ -265,12 +265,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                   },
                 ],
                 forwardedValues: {
-                  queryString: true, // need to be able to redirect old urls to new ones
+                  queryString: true, // will be bringing back query params
                 },
                 isDefaultBehavior: true,
-                // todo: consider if this makes sense. might want edge lambda to set
+                maxTtl: Duration.days(1),
                 defaultTtl: Duration.hours(4),
-                minTtl: Duration.hours(4), // want to make sure that updated pages get sent (refreshing once a day now)
+                minTtl: Duration.hours(1), // want to make sure that updated pages get sent (refreshing once a day now)
               },
             ],
           },
