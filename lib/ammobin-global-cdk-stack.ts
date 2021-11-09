@@ -249,7 +249,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             responseCode: 404,
             responsePagePath: '/200.html',
             errorCachingMinTtl: 60 * 30 // 30mins
-          }
+          },
         ],
         originConfigs: [
           {
@@ -310,7 +310,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           // image proxy, cache for a year...
           {
             customOriginSource: {
-              domainName: 'images.' + props.publicUrl
+              //domainName: 'images.' + props.publicUrl
+              domainName: 'ammobin-node-image-proxy.fly.dev' // testing out using fly.io instead to reduce apigateway + lambda invokes (have gone over a few months)
             },
             behaviors: [
               {
