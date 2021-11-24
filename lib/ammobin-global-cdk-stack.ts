@@ -224,6 +224,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       }) :
       // beta -> use cloudflare worker for main, will switch all to this once complete
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+        // todo: replace edge lambda with cloudfront custom header functionality once in CDK
         defaultRootObject: '', // cloudflare handles this internally for us
         aliasConfiguration: {
           // from output of ammobin global cdk stack in us-east-1...
@@ -256,6 +257,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             customOriginSource: {
               domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
             },
+            // todo: add old generated client as fallback?
             behaviors: [
               {
                 lambdaFunctionAssociations: [
@@ -268,6 +270,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                   queryString: true, // will be bringing back query params
                 },
                 isDefaultBehavior: true,
+                compress: true,
                 maxTtl: Duration.days(1),
                 defaultTtl: Duration.hours(4),
                 minTtl: Duration.hours(1), // want to make sure that updated pages get sent (refreshing once a day now)
@@ -284,6 +287,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 pathPattern: '_nuxt/*',
                 defaultTtl: Duration.days(365),
                 minTtl: Duration.days(365),
+                compress: true,
               },
             ],
           },
@@ -291,8 +295,13 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           {
             customOriginSource: {
               // todo: use cloudflare worker proxy....then have workers store in cloudflare r2 + kv
-              domainName: 'api.' + props.publicUrl
+              domainName: props.region.toLowerCase() === 'ca' ?
+                'ammobin-ca-api.fly.dev' :
+                ('api.' + props.publicUrl), // TODO: usa fallback
             },
+            // failoverCustomOriginSource: {
+            //   domainName: 'api.' + props.publicUrl,
+            // },
             behaviors: [
               {
                 isDefaultBehavior: false,
@@ -304,6 +313,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
                 defaultTtl: Duration.days(REFRESH_HOURS / 24),
                 minTtl: Duration.minutes(30),
+                compress: true
               },
             ],
           },
@@ -316,6 +326,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             behaviors: [
               {
                 isDefaultBehavior: false,
+                compress: true,
                 pathPattern: 'images/*',
                 allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
                 cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD,
