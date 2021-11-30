@@ -253,7 +253,8 @@ export class AmmobinCdkStack extends cdk.Stack {
       al4xx.addAlarmAction(new SnsAction(emailMe))
 
       // only alarm on low traffic on prod....
-      if (is_prod_enabled) {
+      // api gateway gets no traffic after moving to fly.io
+      if (is_prod_enabled && 1 > 99) {
         // alarms
         const lowTrafficAlarm = new Alarm(this, 'lowTrafficApi', {
           datapointsToAlarm: 6,
