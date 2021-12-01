@@ -255,7 +255,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         originConfigs: [
           {
             customOriginSource: {
-              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
+              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`,
             },
             // todo: add old generated client as fallback?
             behaviors: [
@@ -308,6 +308,15 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 pathPattern: 'api/*',
                 forwardedValues: {
                   queryString: true,
+                  headers: [
+                    'User-Agent',
+                    'CloudFront-Is-Mobile-Viewer',
+                    'CloudFront-Is-Desktop-Viewer',
+                    'CloudFront-Viewer-Country',
+                    'CloudFront-Viewer-Country-Region-Name',
+                    'CloudFront-Viewer-Postal-Code',
+                    'CloudFront-Viewer-Time-Zone'
+                  ],
                 },
                 allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
                 cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
@@ -316,6 +325,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 compress: true
               },
             ],
+
           },
           // image proxy, cache for a year...
           {
@@ -337,8 +347,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           },
         ],
       })
-
-
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId })
 
     // the main magic to easily pass the lambda version to stack in another region
