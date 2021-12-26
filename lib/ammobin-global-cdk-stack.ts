@@ -260,12 +260,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             // todo: add old generated client as fallback?
             behaviors: [
               {
-                lambdaFunctionAssociations: [
-                  {
-                    eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-                    lambdaFunction: securityHeadersVersion
-                  },
-                ],
+                // lambdaFunctionAssociations: [
+                //   {
+                //     eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
+                //     lambdaFunction: securityHeadersVersion
+                //   },
+                // ],
                 forwardedValues: {
                   queryString: true, // will be bringing back query params
                 },
