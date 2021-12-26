@@ -106,7 +106,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
     }))
 
-    const use_github_site = props.stage === 'prod' //&& props.region === 'CA'
+    const use_github_site = false //props.stage === 'prod' //&& props.region === 'CA' // test out cloudflare worker on prod
 
     const distribution = use_github_site ?
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
@@ -224,6 +224,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       }) :
       // beta -> use cloudflare worker for main, will switch all to this once complete
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
+        // todo: replace edge lambda with cloudfront custom header functionality once in CDK
         defaultRootObject: '', // cloudflare handles this internally for us
         aliasConfiguration: {
           // from output of ammobin global cdk stack in us-east-1...
@@ -249,13 +250,14 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             responseCode: 404,
             responsePagePath: '/200.html',
             errorCachingMinTtl: 60 * 30 // 30mins
-          }
+          },
         ],
         originConfigs: [
           {
             customOriginSource: {
-              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
+              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`,
             },
+            // todo: add old generated client as fallback?
             behaviors: [
               {
                 lambdaFunctionAssociations: [
@@ -265,12 +267,13 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                   },
                 ],
                 forwardedValues: {
-                  queryString: true, // need to be able to redirect old urls to new ones
+                  queryString: true, // will be bringing back query params
                 },
                 isDefaultBehavior: true,
-                // todo: consider if this makes sense. might want edge lambda to set
+                compress: true,
+                maxTtl: Duration.days(1),
                 defaultTtl: Duration.hours(4),
-                minTtl: Duration.hours(4), // want to make sure that updated pages get sent (refreshing once a day now)
+                minTtl: Duration.hours(1), // want to make sure that updated pages get sent (refreshing once a day now)
               },
             ],
           },
@@ -284,6 +287,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 pathPattern: '_nuxt/*',
                 defaultTtl: Duration.days(365),
                 minTtl: Duration.days(365),
+                compress: true,
               },
             ],
           },
@@ -291,30 +295,48 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           {
             customOriginSource: {
               // todo: use cloudflare worker proxy....then have workers store in cloudflare r2 + kv
-              domainName: 'api.' + props.publicUrl
+              domainName: props.region.toLowerCase() === 'ca' ?
+                'ammobin-ca-api.fly.dev' :
+                ('api.' + props.publicUrl), // TODO: usa fallback
             },
+            // failoverCustomOriginSource: {
+            //   domainName: 'api.' + props.publicUrl,
+            // },
             behaviors: [
               {
                 isDefaultBehavior: false,
                 pathPattern: 'api/*',
                 forwardedValues: {
                   queryString: true,
+                  headers: [
+                    'User-Agent',
+                    'CloudFront-Is-Mobile-Viewer',
+                    'CloudFront-Is-Desktop-Viewer',
+                    'CloudFront-Viewer-Country',
+                    'CloudFront-Viewer-Country-Region-Name',
+                    'CloudFront-Viewer-Postal-Code',
+                    'CloudFront-Viewer-Time-Zone'
+                  ],
                 },
                 allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
                 cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
                 defaultTtl: Duration.days(REFRESH_HOURS / 24),
                 minTtl: Duration.minutes(30),
+                compress: true
               },
             ],
+
           },
           // image proxy, cache for a year...
           {
             customOriginSource: {
-              domainName: 'images.' + props.publicUrl
+              //domainName: 'images.' + props.publicUrl
+              domainName: 'ammobin-node-image-proxy.fly.dev' // testing out using fly.io instead to reduce apigateway + lambda invokes (have gone over a few months)
             },
             behaviors: [
               {
                 isDefaultBehavior: false,
+                compress: true,
                 pathPattern: 'images/*',
                 allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
                 cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD,
@@ -325,8 +347,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           },
         ],
       })
-
-
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId })
 
     // the main magic to easily pass the lambda version to stack in another region
