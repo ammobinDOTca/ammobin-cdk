@@ -295,9 +295,10 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           {
             customOriginSource: {
               // todo: use cloudflare worker proxy....then have workers store in cloudflare r2 + kv
-              domainName: props.region.toLowerCase() === 'ca' ?
-                'ammobin-ca-api.fly.dev' :
-                ('api.' + props.publicUrl), // TODO: usa fallback
+              domainName: 'api.' + props.publicUrl
+              //props.region.toLowerCase() === 'ca' ?
+                //'ammobin-ca-api.fly.dev' :
+                , // TODO: usa fallback
             },
             // failoverCustomOriginSource: {
             //   domainName: 'api.' + props.publicUrl,
@@ -330,8 +331,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           // image proxy, cache for a year...
           {
             customOriginSource: {
-              //domainName: 'images.' + props.publicUrl
-              domainName: 'ammobin-node-image-proxy.fly.dev' // testing out using fly.io instead to reduce apigateway + lambda invokes (have gone over a few months)
+              domainName: 'images.' + props.publicUrl
+              //domainName: 'ammobin-node-image-proxy.fly.dev' // testing out using fly.io instead to reduce apigateway + lambda invokes (have gone over a few months)
             },
             behaviors: [
               {
