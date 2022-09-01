@@ -39,6 +39,6 @@
   },
   "dependencies": {
     "@types/aws-sdk": "^2.7.0",
-    "aws-cdk": "^1.134.0"
+    "aws-cdk": "^2.37.1"
   }
 }
