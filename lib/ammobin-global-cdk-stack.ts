@@ -297,8 +297,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               // todo: use cloudflare worker proxy....then have workers store in cloudflare r2 + kv
               domainName: 'api.' + props.publicUrl
               //props.region.toLowerCase() === 'ca' ?
-                //'ammobin-ca-api.fly.dev' :
-                , // TODO: usa fallback
+              //'ammobin-ca-api.fly.dev' :
+              , // TODO: usa fallback
             },
             // failoverCustomOriginSource: {
             //   domainName: 'api.' + props.publicUrl,
@@ -325,7 +325,29 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 minTtl: Duration.minutes(30),
                 compress: true
               },
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'api/ping',
+                forwardedValues: {
+                  queryString: false,
+                  headers: [
+                    'User-Agent',
+                    'CloudFront-Is-Mobile-Viewer',
+                    'CloudFront-Is-Desktop-Viewer',
+                    'CloudFront-Viewer-Country',
+                    'CloudFront-Viewer-Country-Region-Name',
+                    'CloudFront-Viewer-Postal-Code',
+                    'CloudFront-Viewer-Time-Zone'
+                  ],
+                },
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+                cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
+                defaultTtl: Duration.days(0),
+                maxTtl: Duration.days(0),
+                minTtl: Duration.minutes(0),
+              },
             ],
+
 
           },
           // image proxy, cache for a year...

@@ -18,7 +18,7 @@ if (region === 'CA') {
 }
 
 async function resizeImage(url: string, width: number): Promise<{ contentType: string, body: any }> {
-  const { srcData, contentType } = await new Promise((resolve, reject) => (url.startsWith('https') ? getHttps : getHttp)(url, (res) => {
+  const { srcData, contentType } = await new Promise<any>((resolve, reject) => (url.startsWith('https') ? getHttps : getHttp)(url, (res) => {
     // todo: assert content type + size + timeouts
 
     const contentType = res.headers["content-type"] || 'content-type not set'

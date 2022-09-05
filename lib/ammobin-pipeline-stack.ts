@@ -28,7 +28,7 @@ export class AmmobinPipelineStack extends Stack {
     super(app, id, props)
 
     const API_SOURCE = 'ammobinApi'
-    const nodejs = 14
+    const nodejs = 16
     const buildImage = codebuild.LinuxBuildImage.STANDARD_3_0
     const CDK_BUILD_OUT = 'CdkBuildOutput'
     const API_BUILD_OUT = 'ApiBuildOutput'
