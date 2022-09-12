@@ -1,16 +1,19 @@
-import lambda = require('@aws-cdk/aws-lambda')
-import apigateway = require('@aws-cdk/aws-apigateway')
-import cdk = require('@aws-cdk/core')
-import acm = require('@aws-cdk/aws-certificatemanager')
-import { Duration } from '@aws-cdk/core'
+import lambda = require('aws-cdk-lib/aws-lambda')
+import apigateway = require('aws-cdk-lib/aws-apigateway')
+import cdk = require('aws-cdk-lib')
+import acm = require('aws-cdk-lib/aws-certificatemanager')
+import { Duration } from 'aws-cdk-lib'
 import { LOG_RETENTION, Region, RUNTIME, Stage } from './constants'
-import { CfnApplication } from '@aws-cdk/aws-sam'
-import { SecurityPolicy } from '@aws-cdk/aws-apigateway'
-export class AmmobinImagesStack extends cdk.Construct {
+import { CfnApplication } from 'aws-cdk-lib/aws-sam'
+import { SecurityPolicy } from 'aws-cdk-lib/aws-apigateway'
+import { Construct } from 'constructs'
+import { CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager'
+
+export class AmmobinImagesStack extends Construct {
 
 
   constructor(
-    scope: cdk.Construct,
+    scope: Construct,
     id: string,
     props: {
       url: string,
@@ -53,7 +56,7 @@ export class AmmobinImagesStack extends cdk.Construct {
       domainName: {
         certificate: new acm.Certificate(this, name + 'Cert', {
           domainName: props.url,
-          validationMethod: acm.ValidationMethod.DNS,
+          validation: CertificateValidation.fromDns()
         }),
         endpointType: apigateway.EndpointType.REGIONAL,
         domainName: props.url,

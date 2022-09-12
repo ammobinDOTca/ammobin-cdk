@@ -1,4 +1,4 @@
-import { Stack, App, StackProps } from '@aws-cdk/core'
+import { Stack, App, StackProps } from 'aws-cdk-lib'
 
 
 

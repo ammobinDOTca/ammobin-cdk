@@ -1,18 +1,18 @@
-import lambda = require('@aws-cdk/aws-lambda')
-import cdk = require('@aws-cdk/core')
-import dynamodb = require('@aws-cdk/aws-dynamodb')
-import sqs = require('@aws-cdk/aws-sqs')
-import { SqsEventSource, SnsEventSource } from '@aws-cdk/aws-lambda-event-sources'
-import { Duration } from '@aws-cdk/core'
-import events = require('@aws-cdk/aws-events')
-import sns = require('@aws-cdk/aws-sns')
-import { RetentionDays } from '@aws-cdk/aws-logs'
-import { Secret } from '@aws-cdk/aws-secretsmanager'
-import * as iam from '@aws-cdk/aws-iam'
-import { Alarm, Metric, ComparisonOperator, TreatMissingData } from '@aws-cdk/aws-cloudwatch'
-import { SnsAction } from '@aws-cdk/aws-cloudwatch-actions'
-import { Topic, } from '@aws-cdk/aws-sns'
-import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
+import lambda = require('aws-cdk-lib/aws-lambda')
+import cdk = require('aws-cdk-lib')
+import dynamodb = require('aws-cdk-lib/aws-dynamodb')
+import sqs = require('aws-cdk-lib/aws-sqs')
+import { SqsEventSource, SnsEventSource } from 'aws-cdk-lib/aws-lambda-event-sources'
+import { Duration } from 'aws-cdk-lib'
+import events = require('aws-cdk-lib/aws-events')
+import sns = require('aws-cdk-lib/aws-sns')
+import { RetentionDays } from 'aws-cdk-lib/aws-logs'
+import { Secret } from 'aws-cdk-lib/aws-secretsmanager'
+import * as iam from 'aws-cdk-lib/aws-iam'
+import { Alarm, Metric, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch'
+import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions'
+import { Topic, } from 'aws-cdk-lib/aws-sns'
+import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions'
 
 import { AmmobinApiStack } from './ammobin-api-stack'
 import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS, Region, RUNTIME } from './constants'
@@ -185,7 +185,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     if (is_prod_enabled) {
       esUrlSecret?.grantRead(logExporter)
     }
-    logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: this.region }))
+    logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, {}))
 
     const testLambda = new lambda.Function(this, 'testLambda', {
       functionName: TEST_LAMBDA_NAME,
@@ -221,7 +221,7 @@ export class AmmobinCdkStack extends cdk.Stack {
           statistic: 'Sum',
           region: this.region,
           period: Duration.minutes(5),
-          dimensions: {
+          dimensionsMap: {
             ApiName: apiName
           }
         }),
@@ -241,7 +241,7 @@ export class AmmobinCdkStack extends cdk.Stack {
           statistic: 'Sum',
           region: this.region,
           period: Duration.minutes(5),
-          dimensions: {
+          dimensionsMap: {
             ApiName: apiName
           }
         }),
@@ -265,7 +265,7 @@ export class AmmobinCdkStack extends cdk.Stack {
             region: this.region,
             statistic: 'Sum',
             period: Duration.minutes(10),
-            dimensions: {
+            dimensionsMap: {
               ApiName: apiName
             }
           }),

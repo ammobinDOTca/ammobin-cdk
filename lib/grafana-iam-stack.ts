@@ -1,6 +1,6 @@
-import cdk = require('@aws-cdk/core')
-import iam = require('@aws-cdk/aws-iam')
-import { PolicyStatement, Effect } from '@aws-cdk/aws-iam'
+import cdk = require('aws-cdk-lib')
+import iam = require('aws-cdk-lib/aws-iam')
+import { PolicyStatement, Effect } from 'aws-cdk-lib/aws-iam'
 
 import { serviceName, Stage, Region } from './constants'
 import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole'

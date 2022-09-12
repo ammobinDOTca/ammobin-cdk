@@ -1,18 +1,21 @@
-import cdk = require('@aws-cdk/core')
-import acm = require('@aws-cdk/aws-certificatemanager')
-import lambda = require('@aws-cdk/aws-lambda')
-import iam = require('@aws-cdk/aws-iam')
+import cdk = require('aws-cdk-lib')
+import acm = require('aws-cdk-lib/aws-certificatemanager')
+import lambda = require('aws-cdk-lib/aws-lambda')
+import iam = require('aws-cdk-lib/aws-iam')
 import { LOG_RETENTION, Stage, REFRESH_HOURS, Region, RUNTIME } from './constants'
-import { Duration } from '@aws-cdk/core'
-import { Alarm, Metric, ComparisonOperator, TreatMissingData } from '@aws-cdk/aws-cloudwatch'
-import { SnsAction } from '@aws-cdk/aws-cloudwatch-actions'
-import { Topic, } from '@aws-cdk/aws-sns'
-import { EmailSubscription } from '@aws-cdk/aws-sns-subscriptions'
-import { PolicyStatement, CanonicalUserPrincipal } from '@aws-cdk/aws-iam'
-import s3 = require('@aws-cdk/aws-s3')
-import cloudfront = require('@aws-cdk/aws-cloudfront')
+import { Duration } from 'aws-cdk-lib'
+import { Alarm, Metric, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib/aws-cloudwatch'
+import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions'
+import { Topic, } from 'aws-cdk-lib/aws-sns'
+import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions'
+import { PolicyStatement, CanonicalUserPrincipal } from 'aws-cdk-lib/aws-iam'
+import s3 = require('aws-cdk-lib/aws-s3')
+import cloudfront = require('aws-cdk-lib/aws-cloudfront')
 
 import sha256 = require('sha256-file')
+import { SecurityPolicyProtocol, SSLMethod, ViewerCertificate } from 'aws-cdk-lib/aws-cloudfront'
+import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager'
+import { SecurityPolicy } from 'aws-cdk-lib/aws-apigateway'
 
 
 interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
@@ -35,7 +38,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     this.cert = new acm.Certificate(this, 'RootGlobalCert', {
       domainName: props.publicUrl,
-      validationMethod: acm.ValidationMethod.DNS,
+      validation: CertificateValidation.fromDns(),
     })
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
 
@@ -110,16 +113,13 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     const distribution = use_github_site ?
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-        aliasConfiguration: {
-          // from output of ammobin global cdk stack in us-east-1...
-          // todo: make this cleaner + other people can use
-          acmCertRef: this.cert.certificateArn,
-          names: [props.publicUrl],
-          securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
-        },
+        viewerCertificate: ViewerCertificate.fromAcmCertificate(Certificate.fromCertificateArn(this, 'viewCert', this.cert.certificateArn), {
+          aliases: [props.publicUrl],
+          securityPolicy: SecurityPolicyProtocol.TLS_V1_2_2021,
+        }),
         enableIpV6: true,
         comment: 'main domain for ammobin, hosts both assets and api',
-        httpVersion: cloudfront.HttpVersion.HTTP2,
+        httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         errorConfigurations: [
           {
@@ -226,16 +226,16 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
         // todo: replace edge lambda with cloudfront custom header functionality once in CDK
         defaultRootObject: '', // cloudflare handles this internally for us
-        aliasConfiguration: {
-          // from output of ammobin global cdk stack in us-east-1...
-          // todo: make this cleaner + other people can use
-          acmCertRef: this.cert.certificateArn,
-          names: [props.publicUrl],
-          securityPolicy: cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021,
-        },
+        // from output of ammobin global cdk stack in us-east-1...
+        // todo: make this cleaner + other people can use
+
+        viewerCertificate: ViewerCertificate.fromAcmCertificate(Certificate.fromCertificateArn(this, 'viewCert', this.cert.certificateArn), {
+          aliases: [props.publicUrl],
+          securityPolicy: SecurityPolicyProtocol.TLS_V1_2_2021,
+        }),
         enableIpV6: true,
         comment: 'main domain for ammobin, hosts both assets and api',
-        httpVersion: cloudfront.HttpVersion.HTTP2,
+        httpVersion: cloudfront.HttpVersion.HTTP2_AND_3, // todo: upgrade to just 3
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         errorConfigurations: [
           // TODO: fix this? cloudflare is breaking on 404, and sending back their error page
@@ -394,7 +394,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             region: this.region,
             statistic: 'sum',
             period: Duration.minutes(5),
-            dimensions: {
+            dimensionsMap: {
               DistributionId: distribution.distributionId,
               Region: 'Global'
             }

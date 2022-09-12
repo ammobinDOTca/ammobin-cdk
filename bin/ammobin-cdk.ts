@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import cdk = require('@aws-cdk/core')
+import * as cdk from 'aws-cdk-lib';
 import { AmmobinCdkStack } from '../lib/ammobin-cdk-stack'
 import { AmmobinGlobalCdkStack } from '../lib/ammobin-global-cdk-stack'
 import { AmmobinPipelineStack } from '../lib/ammobin-pipeline-stack'

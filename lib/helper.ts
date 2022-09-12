@@ -1,8 +1,8 @@
-import { LambdaDestination } from "@aws-cdk/aws-logs-destinations"
-import { ILogGroup, LogGroup } from '@aws-cdk/aws-logs'
-import cdk = require('@aws-cdk/core')
-import Lambda = require('@aws-cdk/aws-lambda')
-import * as iam from '@aws-cdk/aws-iam'
+import { LambdaDestination } from "aws-cdk-lib/aws-logs-destinations"
+import { ILogGroup, LogGroup } from 'aws-cdk-lib/aws-logs'
+import cdk = require('aws-cdk-lib')
+import Lambda = require('aws-cdk-lib/aws-lambda')
+import * as iam from 'aws-cdk-lib/aws-iam'
 import { Region, Stage } from './constants'
 /**
  *
@@ -14,17 +14,16 @@ export function exportLambdaLogsToLogger(stack: cdk.Stack, lambda: Lambda.Functi
   //recreate log group from assumption of auto created lambda log
 
 
-  lambda.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, { region: stack.region }))
+  lambda.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, {}))
 
-  const logGroup = LogGroup.fromLogGroupArn(stack, lambda.node.uniqueId + 'Logs', cdk.Arn.format({
+  const logGroup = LogGroup.fromLogGroupArn(stack, lambda.node.id + 'Logs', cdk.Arn.format({
     service: 'logs',
     resource: 'log-group',
-    sep: ':',
     resourceName: '/aws/lambda/' + lambda.functionName
   }, stack))
   logGroup.node.addDependency(lambda) // need to wait for lambda to exist first
   logGroup.node.addDependency(logLambda)
-  logGroup.addSubscriptionFilter('getAllJson' + lambda.node.uniqueId, {
+  logGroup.addSubscriptionFilter('getAllJson' + lambda.node.id, {
     filterPattern: {
       logPatternString: '{$.level = "info"}' // all logs should be at this level (want all json logs, no need to export lambda cruff)
     },

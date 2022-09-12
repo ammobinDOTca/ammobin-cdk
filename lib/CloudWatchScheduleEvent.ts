@@ -1,5 +1,5 @@
-import lambda = require('@aws-cdk/aws-lambda')
-import events = require('@aws-cdk/aws-events')
+import lambda = require('aws-cdk-lib/aws-lambda')
+import events = require('aws-cdk-lib/aws-events')
 
 /**
  * creates cloudwatch cron event mapping for invoking a lambda
@@ -13,7 +13,8 @@ export class CloudwatchScheduleEvent implements lambda.IEventSource {
     this.rule.addTarget({
       bind: ((): events.RuleTargetConfig => {
         return {
-          id: '', // let cdk auto gen this for us
+
+          //id: '', // let cdk auto gen this for us
           arn: target.functionArn
         }
       })

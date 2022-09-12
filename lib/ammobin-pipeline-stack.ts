@@ -1,17 +1,18 @@
-import codebuild = require('@aws-cdk/aws-codebuild')
-import codepipeline = require('@aws-cdk/aws-codepipeline')
-import codepipeline_actions = require('@aws-cdk/aws-codepipeline-actions')
-import { App, Stack, StackProps, SecretValue, Arn } from '@aws-cdk/core'
-import iam = require('@aws-cdk/aws-iam')
-import { Bucket } from '@aws-cdk/aws-s3'
-import { Duration, } from "@aws-cdk/core"
-import { Function, Runtime, AssetCode } from '@aws-cdk/aws-lambda'
-import { PolicyStatement, Role, ManagedPolicy, ServicePrincipal } from '@aws-cdk/aws-iam'
+import codebuild = require('aws-cdk-lib/aws-codebuild')
+import codepipeline = require('aws-cdk-lib/aws-codepipeline')
+import codepipeline_actions = require('aws-cdk-lib/aws-codepipeline-actions')
+import { App, Stack, StackProps, SecretValue, Arn } from 'aws-cdk-lib'
+import iam = require('aws-cdk-lib/aws-iam')
+import { Bucket } from 'aws-cdk-lib/aws-s3'
+import { Duration, } from "aws-cdk-lib"
+import { Function, Runtime, AssetCode } from 'aws-cdk-lib/aws-lambda'
+import { PolicyStatement, Role, ManagedPolicy, ServicePrincipal } from 'aws-cdk-lib/aws-iam'
 
 import { CrossAccountDeploymentRoles } from './CrossAccountDeploymentRole'
 import { LOG_RETENTION, serviceName, Stage, Region, TEST_LAMBDA_NAME, RUNTIME } from './constants'
 import { PipelineInvokeUserParams } from '../lambdas/pipeline/test-invoker'
 import { getAccountForRegionAndStage, regionToAWSRegion } from './helper'
+import { LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild'
 
 export interface PipelineStackProps extends StackProps {
 
@@ -29,7 +30,7 @@ export class AmmobinPipelineStack extends Stack {
     //https://docs.aws.amazon.com/codebuild/latest/userguide/available-runtimes.html
     const API_SOURCE = 'ammobinApi'
     const nodejs = 16
-    const buildImage = 'aws/codebuild/amazonlinux2-x86_64-standard:4.0' //codebuild.LinuxBuildImage.STANDARD_4_0 // todo arm
+    const buildImage = LinuxBuildImage.fromCodeBuildImageId('aws/codebuild/amazonlinux2-x86_64-standard:4.0')// todo arm
     const CDK_BUILD_OUT = 'CdkBuildOutput'
     const API_BUILD_OUT = 'ApiBuildOutput'
 

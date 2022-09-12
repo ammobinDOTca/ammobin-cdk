@@ -1,5 +1,5 @@
-import cdk = require('@aws-cdk/core')
-import iam = require('@aws-cdk/aws-iam')
+import cdk = require('aws-cdk-lib')
+import iam = require('aws-cdk-lib/aws-iam')
 interface Props extends cdk.StackProps {
   /**
    * ARN of bucket to grant putObject

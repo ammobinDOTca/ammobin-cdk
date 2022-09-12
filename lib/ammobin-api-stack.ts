@@ -1,18 +1,20 @@
-import lambda = require('@aws-cdk/aws-lambda')
-import apigateway = require('@aws-cdk/aws-apigateway')
-import cdk = require('@aws-cdk/core')
-import acm = require('@aws-cdk/aws-certificatemanager')
-import { Duration } from '@aws-cdk/core'
+import lambda = require('aws-cdk-lib/aws-lambda')
+import apigateway = require('aws-cdk-lib/aws-apigateway')
+import acm = require('aws-cdk-lib/aws-certificatemanager')
+import { Duration } from 'aws-cdk-lib'
+import * as cdk from 'aws-cdk-lib'
+import { Construct } from 'constructs';
+
 import { LOG_RETENTION, RUNTIME } from './constants'
 
-export class AmmobinApiStack extends cdk.Construct {
+export class AmmobinApiStack extends Construct {
   // shit we expose
   code: lambda.AssetCode
   lambda: lambda.Function
   api: apigateway.RestApi
   graphqlLambda: lambda.Function
   constructor(
-    scope: cdk.Construct,
+    scope: Construct,
     id: string,
     props: {
       url: string
@@ -43,7 +45,7 @@ export class AmmobinApiStack extends cdk.Construct {
         // todo move this cert higher up + use wildcard
         certificate: new acm.Certificate(this, props.name + 'Cert', {
           domainName: props.url,
-          validationMethod: acm.ValidationMethod.DNS,
+          validation: acm.CertificateValidation.fromDns()
         }),
         endpointType: apigateway.EndpointType.REGIONAL,
         domainName: props.url,

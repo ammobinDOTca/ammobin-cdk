@@ -1,6 +1,6 @@
-import { RetentionDays } from "@aws-cdk/aws-logs"
+import { RetentionDays } from "aws-cdk-lib/aws-logs"
 
-import { Runtime } from '@aws-cdk/aws-lambda'
+import { Runtime } from 'aws-cdk-lib/aws-lambda'
 export const LOG_RETENTION = RetentionDays.ONE_WEEK
 
 export declare type Stage = 'prod' | 'beta'

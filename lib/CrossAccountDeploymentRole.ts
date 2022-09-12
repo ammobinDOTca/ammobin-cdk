@@ -1,5 +1,6 @@
-import { Construct, Arn } from '@aws-cdk/core';
-import { PolicyStatement, Role, AccountPrincipal, Policy, Effect, ManagedPolicy } from '@aws-cdk/aws-iam'
+import { Construct } from 'constructs'
+import { Arn } from 'aws-cdk-lib';
+import { PolicyStatement, Role, AccountPrincipal, Policy, Effect, ManagedPolicy } from 'aws-cdk-lib/aws-iam'
 import { Region, Stage, TEST_LAMBDA_NAME } from './constants';
 
 export interface CrossAccountDeploymentRoleProps {
