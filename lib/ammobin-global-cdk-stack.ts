@@ -166,10 +166,10 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     headers['x-frame-options'] = {value: 'DENY'}; 
     headers['x-xss-protection'] = {value: '1; mode=block'}; 
 
-    headers['server'] = undefined
-    headers['cf-ray'] = undefined
-    headers['nel'] = undefined
-    headers['report-to'] = undefined
+    delete headers['server'] 
+    delete headers['cf-ray'] 
+    delete headers['nel'] 
+    delete headers['report-to']
 
 
     // Return the response to viewers 

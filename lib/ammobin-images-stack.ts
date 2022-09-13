@@ -8,6 +8,7 @@ import { CfnApplication } from 'aws-cdk-lib/aws-sam'
 import { SecurityPolicy } from 'aws-cdk-lib/aws-apigateway'
 import { Construct } from 'constructs'
 import { CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager'
+import { FunctionUrlAuthType } from 'aws-cdk-lib/aws-lambda'
 
 export class AmmobinImagesStack extends Construct {
 
