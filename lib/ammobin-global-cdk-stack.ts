@@ -13,9 +13,8 @@ import s3 = require('aws-cdk-lib/aws-s3')
 import cloudfront = require('aws-cdk-lib/aws-cloudfront')
 
 import sha256 = require('sha256-file')
-import { SecurityPolicyProtocol, SSLMethod, ViewerCertificate } from 'aws-cdk-lib/aws-cloudfront'
+import { FunctionEventType, SecurityPolicyProtocol, ViewerCertificate } from 'aws-cdk-lib/aws-cloudfront'
 import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager'
-import { SecurityPolicy } from 'aws-cdk-lib/aws-apigateway'
 
 
 interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
@@ -65,15 +64,15 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       description: ''
     }) //.addPermission()
 
-    const securityHeaders = new lambda.Function(this, 'securityHeaders', {
-      code: apiCode,
-      handler: 'security-headers.handler',
-      runtime: RUNTIME,
-      environment: {},
-      timeout: Duration.seconds(3),
-      role: lambdaRole,
-      logRetention: LOG_RETENTION
-    })
+    // const securityHeaders = new lambda.Function(this, 'securityHeaders', {
+    //   code: apiCode,
+    //   handler: 'security-headers.handler',
+    //   runtime: RUNTIME,
+    //   environment: {},
+    //   timeout: Duration.seconds(3),
+    //   role: lambdaRole,
+    //   logRetention: LOG_RETENTION
+    // })
 
     new cdk.CfnOutput(this, 'nuxtRerouterArn', { value: nuxtRerouter.functionArn })
 
@@ -82,9 +81,9 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     const nuxtRerouterVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/nuxt-rerouter.ts'), {
       lambda: nuxtRerouter,
     })
-    const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/security-headers.ts'), {
-      lambda: securityHeaders,
-    })
+    // const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/security-headers.ts'), {
+    //   lambda: securityHeaders,
+    // })
 
     this.nuxtRerouterVersion = nuxtRerouterVersion
 
@@ -109,120 +108,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
     }))
 
-    const use_github_site = false //props.stage === 'prod' //&& props.region === 'CA' // test out cloudflare worker on prod
-
-    const distribution = use_github_site ?
-      new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
-        viewerCertificate: ViewerCertificate.fromAcmCertificate(Certificate.fromCertificateArn(this, 'viewCert', this.cert.certificateArn), {
-          aliases: [props.publicUrl],
-          securityPolicy: SecurityPolicyProtocol.TLS_V1_2_2021,
-        }),
-        enableIpV6: true,
-        comment: 'main domain for ammobin, hosts both assets and api',
-        httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
-        priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
-        errorConfigurations: [
-          {
-            errorCode: 403,
-            responseCode: 403,
-            responsePagePath: '/200.html',
-            errorCachingMinTtl: 60 * 5 // 5mins
-          },
-          {
-            errorCode: 404,
-            responseCode: 404,
-            responsePagePath: '/200.html',
-            errorCachingMinTtl: 60 * 30 // 30mins
-          }
-        ],
-        originConfigs: [
-          {
-            // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
-            s3OriginSource: !(use_github_site) ? {
-              s3BucketSource: siteBucket,
-              originAccessIdentity
-            } : undefined,
-            customOriginSource: use_github_site ? {
-              // see https://github.com/ammobinDOTca/s3-bucket
-              domainName: `client.github.ammobin.${props.region.toLowerCase()}`
-            } : undefined,
-            behaviors: [
-              {
-                lambdaFunctionAssociations: [
-                  {
-                    eventType: cloudfront.LambdaEdgeEventType.ORIGIN_REQUEST,
-                    lambdaFunction: nuxtRerouterVersion,
-                  },
-                  {
-                    eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-                    lambdaFunction: securityHeadersVersion
-                  },
-                ],
-                forwardedValues: {
-                  queryString: true, // need to be able to redirect old urls to new ones
-                },
-                isDefaultBehavior: true,
-                defaultTtl: Duration.days(365),
-                minTtl: Duration.days(REFRESH_HOURS / 24), // want to make sure that updated pages get sent (refreshing once a day now)
-              },
-            ],
-          },
-          {
-            // 20200105 due to high cost + volume of PUT requests to s3 site bucket, use github pages instead for production
-            s3OriginSource: !use_github_site ? {
-              s3BucketSource: siteBucket,
-              originAccessIdentity
-            } : undefined,
-            customOriginSource: use_github_site ? {
-              // see https://github.com/ammobinDOTca/s3-bucket
-              domainName: `client.github.ammobin.${props.region.toLowerCase()}`
-            } : undefined,
-            behaviors: [
-              {
-                pathPattern: '_nuxt/*',
-                defaultTtl: Duration.days(365),
-                minTtl: Duration.days(365),
-              },
-            ],
-          },
-          // route api requests to the api lambda + gateway
-          {
-            customOriginSource: {
-              domainName: 'api.' + props.publicUrl
-            },
-            behaviors: [
-              {
-                isDefaultBehavior: false,
-                pathPattern: 'api/*',
-                forwardedValues: {
-                  queryString: true,
-                },
-                allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
-                // cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD_OPTIONS,
-                defaultTtl: Duration.days(REFRESH_HOURS / 24),
-                minTtl: Duration.minutes(30),
-              },
-            ],
-          },
-          // image proxy, cache for a year...
-          {
-            customOriginSource: {
-              domainName: 'images.' + props.publicUrl
-            },
-            behaviors: [
-              {
-                isDefaultBehavior: false,
-                pathPattern: 'images/*',
-                allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
-                cachedMethods: cloudfront.CloudFrontAllowedCachedMethods.GET_HEAD,
-                defaultTtl: Duration.days(365),
-                minTtl: Duration.days(365),
-              },
-            ],
-          },
-        ],
-      }) :
-      // beta -> use cloudflare worker for main, will switch all to this once complete
+    const distribution = 
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
         // todo: replace edge lambda with cloudfront custom header functionality once in CDK
         defaultRootObject: '', // cloudflare handles this internally for us
@@ -255,7 +141,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         originConfigs: [
           {
             customOriginSource: {
-              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`,
+              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`,  
             },
             // todo: add old generated client as fallback?
             behaviors: [
@@ -266,6 +152,31 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 //     lambdaFunction: securityHeadersVersion
                 //   },
                 // ],
+                functionAssociations:[{
+                  eventType:FunctionEventType.VIEWER_RESPONSE,
+                  function: new cloudfront.Function(this, 'Function', {
+                    code: cloudfront.FunctionCode.fromInline(`function handler(event) { 
+    var response = event.response;
+    var headers = response.headers;
+
+    // Set HTTP security headers
+    headers['strict-transport-security'] = { value: 'max-age=63072000; includeSubdomains; preload'}; 
+    headers['content-security-policy-report-only'] = { value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self' https://store-udt1amkaxd.mybigcommerce.com; report-uri https://ammobin.ca/api/content-security-report-uri" }; 
+    headers['x-content-type-options'] = { value: 'nosniff'}; 
+    headers['x-frame-options'] = {value: 'DENY'}; 
+    headers['x-xss-protection'] = {value: '1; mode=block'}; 
+
+    headers['server'] = undefined
+    headers['cf-ray'] = undefined
+    headers['nel'] = undefined
+    headers['report-to'] = undefined
+
+
+    // Return the response to viewers 
+    return response;
+                    }`),
+                  })
+                }],
                 forwardedValues: {
                   queryString: true, // will be bringing back query params
                 },

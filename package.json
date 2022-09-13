@@ -4,6 +4,7 @@
   "bin": {
     "ammobin-cdk": "dist/bin/ammobin-cdk.js"
   },
+  "engines": {"node": ">=16"},
   "scripts": {
     "build:ts": "tsc --outDir dist ",
     "build": "npm run build:ts && cp -r lambdas/log-exporter/node_modules dist/lambdas/log-exporter/node_modules && cp -r lambdas/image-proxy/node_modules dist/lambdas/image-proxy/node_modules",
