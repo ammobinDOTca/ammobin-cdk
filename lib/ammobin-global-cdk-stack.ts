@@ -38,6 +38,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     this.cert = new acm.Certificate(this, 'RootGlobalCert', {
       domainName: props.publicUrl,
       validation: CertificateValidation.fromDns(),
+      subjectAlternativeNames: props.stage.toLowerCase() === 'prod' ?['www.'+props.publicUrl]:[]
     })
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
 
