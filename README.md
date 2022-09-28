@@ -46,6 +46,8 @@ https://aws.amazon.com/elasticloadbalancing/pricing/ => \$20 a month before any 
 ---
 
 # open todos
+update arch diagram
+
 arm lambdas
 
 do route53 stack -> move to cloudflare instead?

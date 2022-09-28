@@ -8,10 +8,11 @@ import { CfnApplication } from 'aws-cdk-lib/aws-sam'
 import { SecurityPolicy } from 'aws-cdk-lib/aws-apigateway'
 import { Construct } from 'constructs'
 import { CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager'
-import { FunctionUrlAuthType } from 'aws-cdk-lib/aws-lambda'
+import { Architecture, FunctionUrl, FunctionUrlAuthType } from 'aws-cdk-lib/aws-lambda'
 
 export class AmmobinImagesStack extends Construct {
 
+  functionUrl: FunctionUrl
 
   constructor(
     scope: Construct,
@@ -24,6 +25,7 @@ export class AmmobinImagesStack extends Construct {
   ) {
     super(scope, id)
 
+    // todo: ARM image.....
     const imageMagic = new CfnApplication(scope as any, 'imageMagic', {
       location: {
         applicationId: 'arn:aws:serverlessrepo:us-east-1:145266761615:applications/image-magick-lambda-layer',
@@ -37,6 +39,7 @@ export class AmmobinImagesStack extends Construct {
       code,
       handler: 'main.handler',
       runtime: RUNTIME,
+      //architecture:Architecture.ARM_64,
       environment: {
         production: 'true',
         region: props.region,
@@ -49,6 +52,8 @@ export class AmmobinImagesStack extends Construct {
         lambda.LayerVersion.fromLayerVersionArn(this, 'imageLayer', imageMagic.getAtt('Outputs.LayerVersion').toString())
       ]
     })
+
+    this.functionUrl = apiLambda.addFunctionUrl({ authType: FunctionUrlAuthType.NONE })
 
     const api = new apigateway.RestApi(this, name + 'AGW', {
       restApiName: name,

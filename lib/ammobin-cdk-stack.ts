@@ -55,7 +55,9 @@ export class AmmobinCdkStack extends cdk.Stack {
       timeToLiveAttribute: 'ttl'
     })
 
-    new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage, region: props.region })
+    const { functionUrl } = new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage, region: props.region })
+    this.exportValue(functionUrl.url, { name: 'imageFunctionUrl' })
+
     const CODE_BASE = (props.apiCode || '../ammobin-api') + '/lambda/'
     console.log('CODE_BASE', CODE_BASE, props)
     const apiName = 'apiLambda'
@@ -76,6 +78,9 @@ export class AmmobinCdkStack extends cdk.Stack {
 
     itemsTable.grantReadData(api.lambda)
     itemsTable.grantReadData(api.graphqlLambda)
+
+    this.exportValue(api.graphqlFunctionUrl.url, { name: 'graphqlFunctionUrl' })
+    this.exportValue(api.lambdaFunctionUrl.url, { name: 'lambdaFunctionUrl' })
 
     // TODO: manually update this key: https://ca-central-1.console.aws.amazon.com/secretsmanager/home?region=ca-central-1#/secret?name=rendertronUrl
     //https://docs.aws.amazon.com/secretsmanager/latest/userguide/manage_update-secret.html
