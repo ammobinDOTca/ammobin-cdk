@@ -6,13 +6,16 @@ import * as cdk from 'aws-cdk-lib'
 import { Construct } from 'constructs';
 
 import { LOG_RETENTION, RUNTIME } from './constants'
+import { FunctionUrl, FunctionUrlAuthType } from 'aws-cdk-lib/aws-lambda'
 
 export class AmmobinApiStack extends Construct {
   // shit we expose
   code: lambda.AssetCode
   lambda: lambda.Function
   api: apigateway.RestApi
+  lambdaFunctionUrl: FunctionUrl
   graphqlLambda: lambda.Function
+  graphqlFunctionUrl: FunctionUrl
   constructor(
     scope: Construct,
     id: string,
@@ -36,6 +39,8 @@ export class AmmobinApiStack extends Construct {
       timeout: Duration.seconds(3),
       logRetention: LOG_RETENTION
     })
+
+    this.lambdaFunctionUrl = apiLambda.addFunctionUrl({ authType: FunctionUrlAuthType.NONE })
 
     const api = new apigateway.RestApi(this, props.name + 'AGW', {
       restApiName: props.name,
@@ -79,6 +84,7 @@ export class AmmobinApiStack extends Construct {
       environment: props.environment,
       logRetention: LOG_RETENTION,
     })
+    this.graphqlFunctionUrl = graphqlLambda.addFunctionUrl({ authType: FunctionUrlAuthType.NONE })
     this.graphqlLambda = graphqlLambda
     clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda), {
       operationName: 'graphql',

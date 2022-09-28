@@ -15,6 +15,7 @@ import cloudfront = require('aws-cdk-lib/aws-cloudfront')
 import sha256 = require('sha256-file')
 import { FunctionEventType, SecurityPolicyProtocol, ViewerCertificate } from 'aws-cdk-lib/aws-cloudfront'
 import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager'
+import { FunctionUrl } from 'aws-cdk-lib/aws-lambda'
 
 
 interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
@@ -22,7 +23,10 @@ interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
   siteBucket: string,
   stage: Stage,
   region: Region,
-  email?: string
+  email?: string,
+  imageFunctionUrl?: FunctionUrl,
+  apiFunctionUrl?: FunctionUrl,
+  graphqlFunctionUrl?: FunctionUrl,
 }
 
 export class AmmobinGlobalCdkStack extends cdk.Stack {
@@ -38,7 +42,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     this.cert = new acm.Certificate(this, 'RootGlobalCert', {
       domainName: props.publicUrl,
       validation: CertificateValidation.fromDns(),
-      subjectAlternativeNames: props.stage.toLowerCase() === 'prod' ?['www.'+props.publicUrl]:[]
+      subjectAlternativeNames: props.stage.toLowerCase() === 'prod' ? ['www.' + props.publicUrl] : []
     })
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
 
@@ -109,7 +113,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
     }))
 
-    const distribution = 
+    const distribution =
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
         // todo: replace edge lambda with cloudfront custom header functionality once in CDK
         defaultRootObject: '', // cloudflare handles this internally for us
@@ -142,7 +146,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         originConfigs: [
           {
             customOriginSource: {
-              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`,  
+              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`,
             },
             // todo: add old generated client as fallback?
             behaviors: [
@@ -153,27 +157,27 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 //     lambdaFunction: securityHeadersVersion
                 //   },
                 // ],
-                functionAssociations:[{
-                  eventType:FunctionEventType.VIEWER_RESPONSE,
+                functionAssociations: [{
+                  eventType: FunctionEventType.VIEWER_RESPONSE,
                   function: new cloudfront.Function(this, 'Function', {
-                    code: cloudfront.FunctionCode.fromInline(`function handler(event) { 
+                    code: cloudfront.FunctionCode.fromInline(`function handler(event) {
     var response = event.response;
     var headers = response.headers;
 
     // Set HTTP security headers
-    headers['strict-transport-security'] = { value: 'max-age=63072000; includeSubdomains; preload'}; 
-    headers['content-security-policy-report-only'] = { value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self' https://store-udt1amkaxd.mybigcommerce.com; report-uri https://ammobin.ca/api/content-security-report-uri" }; 
-    headers['x-content-type-options'] = { value: 'nosniff'}; 
-    headers['x-frame-options'] = {value: 'DENY'}; 
-    headers['x-xss-protection'] = {value: '1; mode=block'}; 
+    headers['strict-transport-security'] = { value: 'max-age=63072000; includeSubdomains; preload'};
+    headers['content-security-policy-report-only'] = { value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self' https://store-udt1amkaxd.mybigcommerce.com; report-uri https://ammobin.ca/api/content-security-report-uri" };
+    headers['x-content-type-options'] = { value: 'nosniff'};
+    headers['x-frame-options'] = {value: 'DENY'};
+    headers['x-xss-protection'] = {value: '1; mode=block'};
 
-    delete headers['server'] 
-    delete headers['cf-ray'] 
-    delete headers['nel'] 
+    delete headers['server']
+    delete headers['cf-ray']
+    delete headers['nel']
     delete headers['report-to']
 
 
-    // Return the response to viewers 
+    // Return the response to viewers
     return response;
                     }`),
                   })
@@ -206,6 +210,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           // route api requests to the api lambda + gateway
           {
             customOriginSource: {
+
               // todo: use cloudflare worker proxy....then have workers store in cloudflare r2 + kv
               domainName: 'api.' + props.publicUrl
               //props.region.toLowerCase() === 'ca' ?
@@ -263,9 +268,14 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           // image proxy, cache for a year...
           {
             customOriginSource: {
-              domainName: 'images.' + props.publicUrl
-              //domainName: 'ammobin-node-image-proxy.fly.dev' // testing out using fly.io instead to reduce apigateway + lambda invokes (have gone over a few months)
+              domainName: props.imageFunctionUrl ?
+                props.imageFunctionUrl.url :
+                'images.' + props.publicUrl
             },
+            // fail back to apigw IFF we have a function url
+            failoverCustomOriginSource: props.imageFunctionUrl ? {
+              domainName: 'images.' + props.publicUrl
+            } : undefined,
             behaviors: [
               {
                 isDefaultBehavior: false,
