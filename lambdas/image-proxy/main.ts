@@ -72,8 +72,8 @@ export async function handler(event: APIGatewayEvent) {
     }
   }
 
-
-  const s = (event.path||event.rawPath).split('/')
+  // also handle lambda function url events
+  const s = (event.path||(event as any).rawPath).split('/')
   if (s.length < 3) {
     return <APIGatewayProxyResult>{
       statusCode: 404,
