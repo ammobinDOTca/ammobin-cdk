@@ -9,10 +9,10 @@
   },
   "scripts": {
     "build:ts": "tsc --outDir dist ",
-    "build": "npm run build:ts && cp -r lambdas/log-exporter/node_modules dist/lambdas/log-exporter/node_modules && cp -r lambdas/image-proxy/node_modules dist/lambdas/image-proxy/node_modules",
+    "build": "npm run build:ts && cp -r lambdas/log-exporter/node_modules dist/lambdas/log-exporter/node_modules && cp -r lambdas/image-proxy/node_modules dist/lambdas/image-proxy/node_modules &&   cp -r lambdas/edge-signer/node_modules dist/lambdas/edge-signer/node_modules",
     "watch": "tsc -w",
     "cdk": "cdk",
-    "postinstall": "cd lambdas/image-proxy && npm i && cd .. && cd log-exporter && npm i && cd ../.."
+    "postinstall": "cd lambdas/image-proxy && npm i && cd .. && cd log-exporter && npm i && cd .. && cd edge-signer && npm i && cd ../.."
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.102",

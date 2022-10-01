@@ -53,7 +53,7 @@ export class AmmobinImagesStack extends Construct {
       ]
     })
 
-    this.functionUrl = apiLambda.addFunctionUrl({ authType: FunctionUrlAuthType.NONE })
+    this.functionUrl = apiLambda.addFunctionUrl({ authType: FunctionUrlAuthType.AWS_IAM })
 
     const api = new apigateway.RestApi(this, name + 'AGW', {
       restApiName: name,
