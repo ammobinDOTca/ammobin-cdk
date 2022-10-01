@@ -29,6 +29,8 @@ jobs:
         run: npm ci
       - name: build
         run: npm run build
-      # TODO pull in api code into GHA build
-      # - name: synth
-      #   run: npm run cdk synth
+      - name: synth
+        run: |
+        mkdir -p ../ammobin-api/lambda
+        touch ../ammobin-api/lambda/da_booty.txt
+        npm run cdk synth
