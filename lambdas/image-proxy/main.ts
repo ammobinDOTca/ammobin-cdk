@@ -2,7 +2,6 @@ import { APIGatewayEvent, APIGatewayProxyResult } from 'aws-lambda'
 import { resize } from 'imagemagick'
 import { get as getHttp } from 'http'
 import { get as getHttps } from 'https'
-import { fstat } from 'fs'
 
 const { stage, region } = process.env
 let DOMAIN = ''
