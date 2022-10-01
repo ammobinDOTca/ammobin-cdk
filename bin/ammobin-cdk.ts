@@ -27,6 +27,40 @@ if (stage === 'beta') {
 }
 const siteBucket = publicUrl.replace(/\./gi, '-')
 
+const getFunctionUrls = () => {
+  if (stage == 'beta') {
+    if (region === 'CA') {
+      return {
+        imageFunctionUrl: 'jyfuzpgkgjnyfa7xhf3murrlb40gwdzl.lambda-url.ca-central-1.on.aws',
+        apiFunctionUrl: "ic7mlrwjxiautlmp7bzds4t3cu0rdtwf.lambda-url.ca-central-1.on.aws",
+        graphqlFunctionUrl: '42ervs3vmods7p26trlm5luaiy0rgruh.lambda-url.ca-central-1.on.aws',
+      }
+    } else if (region == 'US') {
+      return {
+        imageFunctionUrl: 'oxznamwj2any7tlldl2yrirhbe0hvefr.lambda-url.us-west-2.on.aws',
+        apiFunctionUrl: "igv6jn3u2fp6vl2yrgoqek5gne0gedto.lambda-url.us-west-2.on.aws",
+        graphqlFunctionUrl: 'l3n355nzw7i2ufgm76kntuecxi0jeipx.lambda-url.us-west-2.on.aws',
+      }
+    }
+  } else if (stage == "prod") {
+    if (region === 'CA') {
+      return {
+        imageFunctionUrl: 'xsirnqhsbkrxk73yknlc6nbeqe0yvlvj.lambda-url.ca-central-1.on.aws',
+        apiFunctionUrl: "6oqoa3ajhjvogn5ivpjaqsup7q0lwosy.lambda-url.ca-central-1.on.aws",
+        graphqlFunctionUrl: 'pekphf6zumclwhxyjfk52udm7i0stsjy.lambda-url.ca-central-1.on.aws',
+      }
+    } else if (region == 'US') {
+      return {
+        imageFunctionUrl: '7dvkbg6jazyi5o55prgcmcz6va0tapak.lambda-url.us-west-2.on.aws',
+        apiFunctionUrl: "dd2ljdjyjjhz5a5meml3hlax3i0fjcqk.lambda-url.us-west-2.on.aws",
+        graphqlFunctionUrl: 'gyj3dkfohpknq567iebv7gjnuq0oosff.lambda-url.us-west-2.on.aws',
+      }
+    }
+  }
+
+  return undefined
+}
+
 // deployed by pipeline, do not manually deploy
 new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   env: {
@@ -36,7 +70,8 @@ new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   publicUrl,
   siteBucket,
   stage,
-  email
+  email,
+  ...getFunctionUrls()
 })
 
 // deployed by pipeline, do not manually deploy

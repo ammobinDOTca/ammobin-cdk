@@ -8,14 +8,14 @@ import { Alarm, Metric, ComparisonOperator, TreatMissingData } from 'aws-cdk-lib
 import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions'
 import { Topic, } from 'aws-cdk-lib/aws-sns'
 import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions'
-import { PolicyStatement, CanonicalUserPrincipal } from 'aws-cdk-lib/aws-iam'
+import { PolicyStatement, CanonicalUserPrincipal, PolicyDocument, Effect } from 'aws-cdk-lib/aws-iam'
 import s3 = require('aws-cdk-lib/aws-s3')
 import cloudfront = require('aws-cdk-lib/aws-cloudfront')
 
 import sha256 = require('sha256-file')
-import { FunctionEventType, SecurityPolicyProtocol, ViewerCertificate } from 'aws-cdk-lib/aws-cloudfront'
+import { FunctionEventType, LambdaEdgeEventType, SecurityPolicyProtocol, ViewerCertificate } from 'aws-cdk-lib/aws-cloudfront'
 import { Certificate, CertificateValidation } from 'aws-cdk-lib/aws-certificatemanager'
-import { FunctionUrl } from 'aws-cdk-lib/aws-lambda'
+import { regionToAWSRegion } from './helper'
 
 
 interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
@@ -24,9 +24,9 @@ interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
   stage: Stage,
   region: Region,
   email?: string,
-  imageFunctionUrl?: FunctionUrl,
-  apiFunctionUrl?: FunctionUrl,
-  graphqlFunctionUrl?: FunctionUrl,
+  imageFunctionUrl?: string,
+  apiFunctionUrl?: string,
+  graphqlFunctionUrl?: string,
 }
 
 export class AmmobinGlobalCdkStack extends cdk.Stack {
@@ -46,7 +46,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     })
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
 
-    const apiCode = new lambda.AssetCode('dist/lambdas/edge')
+    const simpleEdgeCode = new lambda.AssetCode('dist/lambdas/edge')
     const lambdaRole = new iam.Role(this, 'LambdaExecutionRole', {
       assumedBy: new iam.CompositePrincipal(
         new iam.ServicePrincipal('lambda.amazonaws.com'),
@@ -57,9 +57,31 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
       ],
     })
+
+    const signerRole = new iam.Role(this, 'LambdaSignerExecutionRole', {
+      assumedBy: new iam.CompositePrincipal(
+        new iam.ServicePrincipal('lambda.amazonaws.com'),
+        new iam.ServicePrincipal('edgelambda.amazonaws.com')
+      ),
+      managedPolicies: [
+        // need to add this back in so we can write logs
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
+      ],
+      inlinePolicies: {
+        invokeUrl: new PolicyDocument({
+          statements: [
+            new PolicyStatement({
+              effect: Effect.ALLOW,
+              actions: ['lambda:InvokeFunctionUrl'],
+              resources: [`arn:aws:lambda:${regionToAWSRegion(props.region)}:${this.account}:function:*`]
+            })
+          ]
+        })
+      }
+    })
     // https://github.com/bogdal/aws-cdk-website/blob/master/src/SinglePageApplication.ts#L57
     const nuxtRerouter = new lambda.Function(this, 'nuxtRerouter', {
-      code: apiCode,
+      code: simpleEdgeCode,
       handler: 'nuxt-rerouter.handler',
       runtime: RUNTIME,
       environment: {},
@@ -68,6 +90,18 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       logRetention: LOG_RETENTION,
       description: ''
     }) //.addPermission()
+
+
+    const edgeSigner = new lambda.Function(this, 'edgeSigner', {
+      code: new lambda.AssetCode('dist/lambdas/edge-signer'),
+      handler: 'index.handler',
+      runtime: RUNTIME,
+      environment: {},
+      timeout: Duration.seconds(3),
+      role: signerRole,
+      logRetention: LOG_RETENTION,
+      description: ''
+    })
 
     // const securityHeaders = new lambda.Function(this, 'securityHeaders', {
     //   code: apiCode,
@@ -85,6 +119,9 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     // version has to start with a letter
     const nuxtRerouterVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/nuxt-rerouter.ts'), {
       lambda: nuxtRerouter,
+    })
+    const edgeSignerVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge-signer/index.ts'), {
+      lambda: edgeSigner,
     })
     // const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/security-headers.ts'), {
     //   lambda: securityHeaders,
@@ -269,7 +306,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           {
             customOriginSource: {
               domainName: props.imageFunctionUrl ?
-                props.imageFunctionUrl.url :
+                props.imageFunctionUrl :
                 'images.' + props.publicUrl
             },
             // fail back to apigw IFF we have a function url
@@ -278,6 +315,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             } : undefined,
             behaviors: [
               {
+                lambdaFunctionAssociations: [
+                  {
+                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+                    lambdaFunction: edgeSignerVersion
+                  }
+                ],
                 isDefaultBehavior: false,
                 compress: true,
                 pathPattern: 'images/*',
@@ -286,6 +329,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 minTtl: Duration.days(365),
               },
             ],
+
           },
         ],
       })
