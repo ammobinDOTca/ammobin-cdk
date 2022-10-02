@@ -1,8 +1,5 @@
 {
   "dependencies": {
-    "aws4": "^1.11"
-  },
-  "devDependencies": {
-    "@types/aws4": "^1.11"
+    "edge-lambda-url-authorizer": "*"
   }
 }
