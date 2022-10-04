@@ -40,7 +40,7 @@ export class AmmobinApiStack extends Construct {
       logRetention: LOG_RETENTION
     })
 
-    this.lambdaFunctionUrl = apiLambda.addFunctionUrl({ authType: FunctionUrlAuthType.NONE })
+    this.lambdaFunctionUrl = apiLambda.addFunctionUrl({ authType: FunctionUrlAuthType.AWS_IAM })
 
     const api = new apigateway.RestApi(this, props.name + 'AGW', {
       restApiName: props.name,
@@ -84,7 +84,7 @@ export class AmmobinApiStack extends Construct {
       environment: props.environment,
       logRetention: LOG_RETENTION,
     })
-    this.graphqlFunctionUrl = graphqlLambda.addFunctionUrl({ authType: FunctionUrlAuthType.NONE })
+    this.graphqlFunctionUrl = graphqlLambda.addFunctionUrl({ authType: FunctionUrlAuthType.AWS_IAM })
     this.graphqlLambda = graphqlLambda
     clientResource.addResource('graphql').addMethod('ANY', new apigateway.LambdaIntegration(graphqlLambda), {
       operationName: 'graphql',

@@ -31,8 +31,6 @@ interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
 
 export class AmmobinGlobalCdkStack extends cdk.Stack {
   cert: acm.Certificate
-  nuxtRerouter: lambda.Function
-  nuxtRerouterVersion: lambda.Version
 
   constructor(scope: cdk.App, id: string, props: IAmmobinGlobalCdkStackProps) {
     super(scope, id, props)
@@ -46,17 +44,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     })
     new cdk.CfnOutput(this, 'mainCert', { value: this.cert.certificateArn })
 
-    const simpleEdgeCode = new lambda.AssetCode('dist/lambdas/edge')
-    const lambdaRole = new iam.Role(this, 'LambdaExecutionRole', {
-      assumedBy: new iam.CompositePrincipal(
-        new iam.ServicePrincipal('lambda.amazonaws.com'),
-        new iam.ServicePrincipal('edgelambda.amazonaws.com')
-      ),
-      managedPolicies: [
-        // need to add this back in so we can write logs
-        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AWSLambdaBasicExecutionRole'),
-      ],
-    })
 
     const signerRole = new iam.Role(this, 'LambdaSignerExecutionRole', {
       assumedBy: new iam.CompositePrincipal(
@@ -79,17 +66,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         })
       }
     })
-    // https://github.com/bogdal/aws-cdk-website/blob/master/src/SinglePageApplication.ts#L57
-    const nuxtRerouter = new lambda.Function(this, 'nuxtRerouter', {
-      code: simpleEdgeCode,
-      handler: 'nuxt-rerouter.handler',
-      runtime: RUNTIME,
-      environment: {},
-      timeout: Duration.seconds(3),
-      role: lambdaRole,
-      logRetention: LOG_RETENTION,
-      description: ''
-    }) //.addPermission()
 
 
     const edgeSigner = new lambda.Function(this, 'edgeSigner', {
@@ -103,31 +79,10 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       description: ''
     })
 
-    // const securityHeaders = new lambda.Function(this, 'securityHeaders', {
-    //   code: apiCode,
-    //   handler: 'security-headers.handler',
-    //   runtime: RUNTIME,
-    //   environment: {},
-    //   timeout: Duration.seconds(3),
-    //   role: lambdaRole,
-    //   logRetention: LOG_RETENTION
-    // })
-
-    new cdk.CfnOutput(this, 'nuxtRerouterArn', { value: nuxtRerouter.functionArn })
-
-    // this way it updates version only in case lambda code changes
-    // version has to start with a letter
-    const nuxtRerouterVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/nuxt-rerouter.ts'), {
-      lambda: nuxtRerouter,
-    })
     const edgeSignerVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge-signer/index.ts'), {
       lambda: edgeSigner,
     })
-    // const securityHeadersVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge/security-headers.ts'), {
-    //   lambda: securityHeaders,
-    // })
 
-    this.nuxtRerouterVersion = nuxtRerouterVersion
 
     const originAccessIdentity = new cloudfront.OriginAccessIdentity(this, 'siteBucketAccess', {
       comment: 'let cloudfront access the site bucket'
@@ -163,7 +118,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         }),
         enableIpV6: true,
         comment: 'main domain for ammobin, hosts both assets and api',
-        httpVersion: cloudfront.HttpVersion.HTTP2_AND_3, // todo: upgrade to just 3
+        httpVersion: cloudfront.HttpVersion.HTTP2_AND_3,
         priceClass: cloudfront.PriceClass.PRICE_CLASS_100,
         errorConfigurations: [
           // TODO: fix this? cloudflare is breaking on 404, and sending back their error page
@@ -188,12 +143,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             // todo: add old generated client as fallback?
             behaviors: [
               {
-                // lambdaFunctionAssociations: [
-                //   {
-                //     eventType: cloudfront.LambdaEdgeEventType.ORIGIN_RESPONSE,
-                //     lambdaFunction: securityHeadersVersion
-                //   },
-                // ],
                 functionAssociations: [{
                   eventType: FunctionEventType.VIEWER_RESPONSE,
                   function: new cloudfront.Function(this, 'Function', {
@@ -247,20 +196,24 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           // route api requests to the api lambda + gateway
           {
             customOriginSource: {
-
-              // todo: use cloudflare worker proxy....then have workers store in cloudflare r2 + kv
-              domainName: 'api.' + props.publicUrl
-              //props.region.toLowerCase() === 'ca' ?
-              //'ammobin-ca-api.fly.dev' :
-              , // TODO: usa fallback
+              domainName: props.apiFunctionUrl ?
+                props.apiFunctionUrl :
+                'api.' + props.publicUrl
             },
-            // failoverCustomOriginSource: {
-            //   domainName: 'api.' + props.publicUrl,
-            // },
+            // fail back to apigw IFF we have a function url
+            failoverCustomOriginSource: props.apiFunctionUrl ? {
+              domainName: 'api.' + props.publicUrl
+            } : undefined,
             behaviors: [
               {
                 isDefaultBehavior: false,
                 pathPattern: 'api/*',
+                lambdaFunctionAssociations: props.apiFunctionUrl ? [
+                  {
+                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+                    lambdaFunction: edgeSignerVersion
+                  }
+                ] : undefined,
                 forwardedValues: {
                   queryString: true,
                   headers: [
@@ -281,6 +234,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               {
                 isDefaultBehavior: false,
                 pathPattern: 'api/ping',
+                lambdaFunctionAssociations: props.apiFunctionUrl ? [
+                  {
+                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+                    lambdaFunction: edgeSignerVersion
+                  }
+                ] : undefined,
                 forwardedValues: {
                   queryString: false,
                   headers: [
@@ -302,6 +261,46 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
 
           },
+          // graphql lambda
+          {
+            customOriginSource: {
+              domainName: props.graphqlFunctionUrl ?
+                props.graphqlFunctionUrl :
+                'api.' + props.publicUrl
+            },
+            // fail back to apigw IFF we have a function url
+            failoverCustomOriginSource: props.graphqlFunctionUrl ? {
+              domainName: 'api.' + props.publicUrl
+            } : undefined,
+            behaviors: [
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'api/graphql*',
+                lambdaFunctionAssociations: props.apiFunctionUrl ? [
+                  {
+                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+                    lambdaFunction: edgeSignerVersion
+                  }
+                ] : undefined,
+                forwardedValues: {
+                  queryString: true,
+                  headers: [
+                    'User-Agent',
+                    'CloudFront-Is-Mobile-Viewer',
+                    'CloudFront-Is-Desktop-Viewer',
+                    'CloudFront-Viewer-Country',
+                    'CloudFront-Viewer-Country-Region-Name',
+                    'CloudFront-Viewer-Postal-Code',
+                    'CloudFront-Viewer-Time-Zone'
+                  ],
+                },
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
+                defaultTtl: Duration.days(REFRESH_HOURS / 24),
+                minTtl: Duration.minutes(30),
+                compress: true
+              },
+            ]
+          },
           // image proxy, cache for a year...
           {
             customOriginSource: {
@@ -315,12 +314,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
             } : undefined,
             behaviors: [
               {
-                lambdaFunctionAssociations: [
+                lambdaFunctionAssociations: props.imageFunctionUrl ? [
                   {
                     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
                     lambdaFunction: edgeSignerVersion
                   }
-                ],
+                ] : undefined,
                 isDefaultBehavior: false,
                 compress: true,
                 pathPattern: 'images/*',
@@ -335,10 +334,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       })
     new cdk.CfnOutput(this, 'DistributionId', { value: distribution.distributionId })
 
-    // the main magic to easily pass the lambda version to stack in another region
-    new cdk.CfnOutput(this, 'nuxtRerouterArnWithVersion', {
-      value: cdk.Fn.join(':', [nuxtRerouter.functionArn, nuxtRerouterVersion.version]),
-    })
 
     if (props.email) {
       const emailMe = new Topic(this, 'emailMeTopic')
