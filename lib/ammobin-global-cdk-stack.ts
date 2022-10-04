@@ -152,7 +152,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
 
     // Set HTTP security headers
     headers['strict-transport-security'] = { value: 'max-age=63072000; includeSubdomains; preload'};
-    headers['content-security-policy-report-only'] = { value: "default-src 'self';script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self' https://store-udt1amkaxd.mybigcommerce.com; report-uri https://ammobin.ca/api/content-security-report-uri" };
+    headers['content-security-policy-report-only'] = { value: "default-src 'self';script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://storage.googleapis.com; connect-src  'self';  style-src 'self' 'unsafe-inline';img-src 'self' https://store-udt1amkaxd.mybigcommerce.com; report-uri https://ammobin.ca/api/content-security-report-uri" };
     headers['x-content-type-options'] = { value: 'nosniff'};
     headers['x-frame-options'] = {value: 'DENY'};
     headers['x-xss-protection'] = {value: '1; mode=block'};
