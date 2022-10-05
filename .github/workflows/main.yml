@@ -33,4 +33,7 @@ jobs:
         run: |
           mkdir -p ../ammobin-api/lambda/api
           touch ../ammobin-api/lambda/api/da_booty.txt
+          
+          mkdir -p ../ammobin-api/lambda/graphql
+          touch ../ammobin-api/lambda/graphql/dat_booty.txt
           npm run cdk synth
