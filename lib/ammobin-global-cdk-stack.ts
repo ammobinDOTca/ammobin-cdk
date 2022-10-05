@@ -200,10 +200,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 props.apiFunctionUrl :
                 'api.' + props.publicUrl
             },
-            // fail back to apigw IFF we have a function url
-            failoverCustomOriginSource: props.apiFunctionUrl ? {
-              domainName: 'api.' + props.publicUrl
-            } : undefined,
             behaviors: [
               {
                 isDefaultBehavior: false,
@@ -268,10 +264,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 props.graphqlFunctionUrl :
                 'api.' + props.publicUrl
             },
-            // fail back to apigw IFF we have a function url
-            failoverCustomOriginSource: props.graphqlFunctionUrl ? {
-              domainName: 'api.' + props.publicUrl
-            } : undefined,
             behaviors: [
               {
                 isDefaultBehavior: false,
@@ -308,10 +300,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 props.imageFunctionUrl :
                 'images.' + props.publicUrl
             },
-            // fail back to apigw IFF we have a function url
-            failoverCustomOriginSource: props.imageFunctionUrl ? {
-              domainName: 'images.' + props.publicUrl
-            } : undefined,
             behaviors: [
               {
                 lambdaFunctionAssociations: props.imageFunctionUrl ? [
