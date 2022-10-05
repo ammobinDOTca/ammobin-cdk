@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "edge-lambda-url-authorizer": "*"
+    "edge-lambda-url-authorizer": "latest"
   }
 }
