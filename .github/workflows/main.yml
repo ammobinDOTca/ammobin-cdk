@@ -36,4 +36,8 @@ jobs:
           
           mkdir -p ../ammobin-api/lambda/graphql
           touch ../ammobin-api/lambda/graphql/dat_booty.txt
+          
+          mkdir -p ../ammobin-api/lambda/refresher
+          touch ../ammobin-api/lambda/refresher/fat_booty.txt
+          refresher
           npm run cdk synth
