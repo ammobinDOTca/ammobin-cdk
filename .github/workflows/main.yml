@@ -31,6 +31,6 @@ jobs:
         run: npm run build
       - name: synth
         run: |
-          mkdir -p ../ammobin-api/lambda
-          touch ../ammobin-api/lambda/da_booty.txt
+          mkdir -p ../ammobin-api/lambda/api
+          touch ../ammobin-api/lambda/api/da_booty.txt
           npm run cdk synth
