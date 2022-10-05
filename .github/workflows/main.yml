@@ -39,4 +39,7 @@ jobs:
           
           mkdir -p ../ammobin-api/lambda/refresher
           touch ../ammobin-api/lambda/refresher/fat_booty.txt
+          
+          mkdir -p ../ammobin-api/lambda/worker
+          touch ../ammobin-api/lambda/worker/dis_booty.txt
           npm run cdk synth
