@@ -52,20 +52,34 @@ export async function handler(event: CodePipelineEvent) {
     region: targetRegion
   })
 
-  const f = await lambda.invoke({
-    FunctionName: targetFunctionArn,
-    Payload: JSON.stringify({ base })
-  }).promise()
-
-  console.log('f.LogResult', f.LogResult)
-
-  if (f.FunctionError) {
-    // lazy fail pipeline
-    throw f.FunctionError
-  } else {
-    await codePipeline.putJobSuccessResult({
-      jobId: event["CodePipeline.job"].id
+  try {
+    const f = await lambda.invoke({
+      FunctionName: targetFunctionArn,
+      Payload: JSON.stringify({ base })
     }).promise()
-    return 'ok'
+
+    console.log('f.LogResult', f.LogResult)
+
+    if (f.FunctionError) {
+      // lazy fail pipeline
+      await codePipeline.putJobFailureResult({
+        jobId: event["CodePipeline.job"].id, failureDetails: {
+          message: f.FunctionError, type: 'functionError'
+        }
+      }).promise()
+      return 'not ok'
+    } else {
+      await codePipeline.putJobSuccessResult({
+        jobId: event["CodePipeline.job"].id
+      }).promise()
+      return 'ok'
+    }
+  } catch (e: any) {
+    await codePipeline.putJobFailureResult({
+      jobId: event["CodePipeline.job"].id, failureDetails: {
+        message: e, type: 'asyncError'
+      }
+    }).promise()
+    return 'not ok'
   }
 };
