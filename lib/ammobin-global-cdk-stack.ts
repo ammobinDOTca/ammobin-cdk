@@ -193,70 +193,6 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               },
             ],
           },
-          // route api requests to the api lambda + gateway
-          {
-            customOriginSource: {
-              domainName: props.apiFunctionUrl ?
-                props.apiFunctionUrl :
-                'api.' + props.publicUrl
-            },
-            behaviors: [
-              {
-                isDefaultBehavior: false,
-                pathPattern: 'api/*',
-                lambdaFunctionAssociations: props.apiFunctionUrl ? [
-                  {
-                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-                    lambdaFunction: edgeSignerVersion
-                  }
-                ] : undefined,
-                forwardedValues: {
-                  queryString: true,
-                  headers: [
-                    'User-Agent',
-                    'CloudFront-Is-Mobile-Viewer',
-                    'CloudFront-Is-Desktop-Viewer',
-                    'CloudFront-Viewer-Country',
-                    'CloudFront-Viewer-Country-Region-Name',
-                    'CloudFront-Viewer-Postal-Code',
-                    'CloudFront-Viewer-Time-Zone'
-                  ],
-                },
-                allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
-                defaultTtl: Duration.days(REFRESH_HOURS / 24),
-                minTtl: Duration.minutes(30),
-                compress: true
-              },
-              {
-                isDefaultBehavior: false,
-                pathPattern: 'api/ping',
-                lambdaFunctionAssociations: props.apiFunctionUrl ? [
-                  {
-                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-                    lambdaFunction: edgeSignerVersion
-                  }
-                ] : undefined,
-                forwardedValues: {
-                  queryString: false,
-                  headers: [
-                    'User-Agent',
-                    'CloudFront-Is-Mobile-Viewer',
-                    'CloudFront-Is-Desktop-Viewer',
-                    'CloudFront-Viewer-Country',
-                    'CloudFront-Viewer-Country-Region-Name',
-                    'CloudFront-Viewer-Postal-Code',
-                    'CloudFront-Viewer-Time-Zone'
-                  ],
-                },
-                allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
-                defaultTtl: Duration.days(0),
-                maxTtl: Duration.days(0),
-                minTtl: Duration.minutes(0),
-              },
-            ],
-
-
-          },
           // graphql lambda
           {
             customOriginSource: {
@@ -293,6 +229,71 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               },
             ]
           },
+          // route api requests to the api lambda + gateway
+          {
+            customOriginSource: {
+              domainName: props.apiFunctionUrl ?
+                props.apiFunctionUrl :
+                'api.' + props.publicUrl
+            },
+            behaviors: [
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'api/ping',
+                lambdaFunctionAssociations: props.apiFunctionUrl ? [
+                  {
+                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+                    lambdaFunction: edgeSignerVersion
+                  }
+                ] : undefined,
+                forwardedValues: {
+                  queryString: false,
+                  headers: [
+                    'User-Agent',
+                    'CloudFront-Is-Mobile-Viewer',
+                    'CloudFront-Is-Desktop-Viewer',
+                    'CloudFront-Viewer-Country',
+                    'CloudFront-Viewer-Country-Region-Name',
+                    'CloudFront-Viewer-Postal-Code',
+                    'CloudFront-Viewer-Time-Zone'
+                  ],
+                },
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.GET_HEAD,
+                defaultTtl: Duration.days(0),
+                maxTtl: Duration.days(0),
+                minTtl: Duration.minutes(0),
+              },
+              {
+                isDefaultBehavior: false,
+                pathPattern: 'api/*',
+                lambdaFunctionAssociations: props.apiFunctionUrl ? [
+                  {
+                    eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
+                    lambdaFunction: edgeSignerVersion
+                  }
+                ] : undefined,
+                forwardedValues: {
+                  queryString: true,
+                  headers: [
+                    'User-Agent',
+                    'CloudFront-Is-Mobile-Viewer',
+                    'CloudFront-Is-Desktop-Viewer',
+                    'CloudFront-Viewer-Country',
+                    'CloudFront-Viewer-Country-Region-Name',
+                    'CloudFront-Viewer-Postal-Code',
+                    'CloudFront-Viewer-Time-Zone'
+                  ],
+                },
+                allowedMethods: cloudfront.CloudFrontAllowedMethods.ALL,
+                defaultTtl: Duration.days(REFRESH_HOURS / 24),
+                minTtl: Duration.minutes(30),
+                compress: true
+              },
+            ],
+
+
+          },
+
           // image proxy, cache for a year...
           {
             customOriginSource: {
