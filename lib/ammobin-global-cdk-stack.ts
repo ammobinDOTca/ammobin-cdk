@@ -207,7 +207,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 lambdaFunctionAssociations: props.apiFunctionUrl ? [
                   {
                     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-                    lambdaFunction: edgeSignerVersion
+                    lambdaFunction: edgeSignerVersion,
+                    includeBody:true
                   }
                 ] : undefined,
                 forwardedValues: {
@@ -243,7 +244,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 lambdaFunctionAssociations: props.apiFunctionUrl ? [
                   {
                     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-                    lambdaFunction: edgeSignerVersion
+                    lambdaFunction: edgeSignerVersion,
                   }
                 ] : undefined,
                 forwardedValues: {
@@ -269,7 +270,8 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                 lambdaFunctionAssociations: props.apiFunctionUrl ? [
                   {
                     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
-                    lambdaFunction: edgeSignerVersion
+                    lambdaFunction: edgeSignerVersion,
+                    includeBody:true
                   }
                 ] : undefined,
                 forwardedValues: {
