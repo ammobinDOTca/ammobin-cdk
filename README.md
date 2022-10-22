@@ -7,7 +7,7 @@ ammobin.ca rebuilt on AWS serverless technologies using AWS-CDK
 # setup
 
 - create aws account + configure cli (set region to ca-central-1) + create profiles for each region + stage
-- install node 12 + cdk
+- install node 16 + cdk
 
 ```
 export publicUrl=<your site domain aka ammobin.ca>

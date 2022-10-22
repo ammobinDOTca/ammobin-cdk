@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "edge-lambda-url-authorizer": "latest"
+    "edge-lambda-url-authorizer": "git@github.com:nexus-uw/edge-lambda-url-authorizer.git#test"
   }
 }
