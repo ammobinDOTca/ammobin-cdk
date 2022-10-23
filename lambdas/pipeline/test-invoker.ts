@@ -58,7 +58,7 @@ export async function handler(event: CodePipelineEvent) {
       Payload: JSON.stringify({ base })
     }).promise()
 
-    console.log('f.LogResult', f.LogResult)
+    console.log('f', JSON.stringify(f,null,' '))
 
     if (f.FunctionError) {
       // lazy fail pipeline
