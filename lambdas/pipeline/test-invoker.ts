@@ -64,7 +64,7 @@ export async function handler(event: CodePipelineEvent) {
       // lazy fail pipeline
       await codePipeline.putJobFailureResult({
         jobId: event["CodePipeline.job"].id, failureDetails: {
-          message: f.FunctionError, type: 'functionError'
+          message: f.FunctionError?.toString(), type: 'functionError'
         }
       }).promise()
       return 'not ok'
@@ -77,7 +77,8 @@ export async function handler(event: CodePipelineEvent) {
   } catch (e: any) {
     await codePipeline.putJobFailureResult({
       jobId: event["CodePipeline.job"].id, failureDetails: {
-        message: e, type: 'asyncError'
+        message: e.toString(),
+         type: 'asyncError'
       }
     }).promise()
     return 'not ok'
