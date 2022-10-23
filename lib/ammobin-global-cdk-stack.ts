@@ -79,7 +79,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       description: ''
     })
 
-    const edgeSignerVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge-signer/index.ts'), {
+    const edgeSignerVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge-signer/index.ts')+sha256('lambdas/edge-signer/package-lock.json'), {
       lambda: edgeSigner,
     })
 
