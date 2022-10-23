@@ -32,7 +32,7 @@ const getFunctionUrls = () => {
     if (site_region === 'CA') {
       return {
         imageFunctionUrl: 'jyfuzpgkgjnyfa7xhf3murrlb40gwdzl.lambda-url.ca-central-1.on.aws',
-        //apiFunctionUrl: "ic7mlrwjxiautlmp7bzds4t3cu0rdtwf.lambda-url.ca-central-1.on.aws",
+        apiFunctionUrl: "ic7mlrwjxiautlmp7bzds4t3cu0rdtwf.lambda-url.ca-central-1.on.aws",
         graphqlFunctionUrl: '42ervs3vmods7p26trlm5luaiy0rgruh.lambda-url.ca-central-1.on.aws',
       }
     } else if (site_region == 'US') {
