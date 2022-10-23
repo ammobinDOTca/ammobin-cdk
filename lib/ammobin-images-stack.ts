@@ -55,32 +55,33 @@ export class AmmobinImagesStack extends Construct {
 
     this.functionUrl = apiLambda.addFunctionUrl({ authType: FunctionUrlAuthType.AWS_IAM })
 
-    const api = new apigateway.RestApi(this, name + 'AGW', {
-      restApiName: name,
-      description: `api for ${name} lambda`,
-      endpointTypes: [apigateway.EndpointType.EDGE],
-      domainName: {
-        certificate: new acm.Certificate(this, name + 'Cert', {
-          domainName: props.url,
-          validation: CertificateValidation.fromDns()
-        }),
-        endpointType: apigateway.EndpointType.REGIONAL,
-        domainName: props.url,
-        securityPolicy: SecurityPolicy.TLS_1_2
-      },
-      binaryMediaTypes: ['*/*'], // lazy
-      deployOptions: { stageName: 'images' }, // to match with cloudfront path pattern ;)
-    })
-    api.addUsagePlan('throttle', {
-      description: 'dont kill the aws bill',
-      throttle: {
-        burstLimit: 10,
-        rateLimit: 2
-      }
-    })
-    api.domainName
-    api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
-    api.root.addResource('{proxy+}').addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
+    // old apigw for image proxy. using lambda url now
+    // const api = new apigateway.RestApi(this, name + 'AGW', {
+    //   restApiName: name,
+    //   description: `api for ${name} lambda`,
+    //   endpointTypes: [apigateway.EndpointType.EDGE],
+    //   domainName: {
+    //     certificate: new acm.Certificate(this, name + 'Cert', {
+    //       domainName: props.url,
+    //       validation: CertificateValidation.fromDns()
+    //     }),
+    //     endpointType: apigateway.EndpointType.REGIONAL,
+    //     domainName: props.url,
+    //     securityPolicy: SecurityPolicy.TLS_1_2
+    //   },
+    //   binaryMediaTypes: ['*/*'], // lazy
+    //   deployOptions: { stageName: 'images' }, // to match with cloudfront path pattern ;)
+    // })
+    // api.addUsagePlan('throttle', {
+    //   description: 'dont kill the aws bill',
+    //   throttle: {
+    //     burstLimit: 10,
+    //     rateLimit: 2
+    //   }
+    // })
+    // api.domainName
+    // api.root.addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
+    // api.root.addResource('{proxy+}').addMethod('GET', new apigateway.LambdaIntegration(apiLambda))
 
   }
 }
