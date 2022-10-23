@@ -204,7 +204,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
               {
                 isDefaultBehavior: false,
                 pathPattern: 'api/graphql*',
-                lambdaFunctionAssociations: props.apiFunctionUrl ? [
+                lambdaFunctionAssociations: props.graphqlFunctionUrl ? [
                   {
                     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
                     lambdaFunction: edgeSignerVersion,
