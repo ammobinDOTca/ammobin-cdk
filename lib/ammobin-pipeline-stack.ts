@@ -29,7 +29,7 @@ export class AmmobinPipelineStack extends Stack {
     super(app, id, props)
     //https://docs.aws.amazon.com/codebuild/latest/userguide/available-runtimes.html
     const API_SOURCE = 'ammobinApi'
-    const nodejs = 16
+    const nodejs = 18
     const buildImage = LinuxBuildImage.fromCodeBuildImageId('aws/codebuild/amazonlinux2-x86_64-standard:4.0')// todo arm
     const CDK_BUILD_OUT = 'CdkBuildOutput'
     const API_BUILD_OUT = 'ApiBuildOutput'
