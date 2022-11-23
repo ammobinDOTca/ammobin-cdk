@@ -39,7 +39,7 @@ export class AmmobinImagesStack extends Construct {
       code,
       handler: 'main.handler',
       runtime: RUNTIME,
-      //architecture:Architecture.ARM_64,
+      //architecture:Architecture.ARM_64, todo
       environment: {
         production: 'true',
         region: props.region,

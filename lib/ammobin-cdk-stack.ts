@@ -15,7 +15,7 @@ import { Topic, } from 'aws-cdk-lib/aws-sns'
 import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions'
 
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS, Region, RUNTIME } from './constants'
+import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS, Region, RUNTIME, ARCH } from './constants'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { exportLambdaLogsToLogger, regionToAWSRegion } from './helper'
 import { AmmobinImagesStack } from './ammobin-images-stack'
@@ -110,6 +110,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       code: new lambda.AssetCode(CODE_BASE + 'refresher'),
       handler: 'refresher.handler',
       runtime: RUNTIME,
+      architecture: ARCH,
       timeout: Duration.minutes(3),
       // memorySize: 1024,
       environment: {
@@ -175,6 +176,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       code: new lambda.AssetCode('./dist/lambdas/log-exporter'),
       handler: 'index.handler',
       runtime: RUNTIME,
+      architecture: ARCH,
       timeout: Duration.minutes(2),
       memorySize: 128,
       environment: {
@@ -195,6 +197,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const testLambda = new lambda.Function(this, 'testLambda', {
       functionName: TEST_LAMBDA_NAME,
       runtime: RUNTIME,
+      architecture: ARCH,
       timeout: Duration.minutes(2),
       code: new lambda.AssetCode(CODE_BASE + 'test'),
       handler: 'test.handler',
@@ -292,6 +295,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       code,
       handler: 'worker.handler',
       runtime: RUNTIME,
+//      architecture: ARCH, TODO    
       timeout,
       memorySize,
       environment,
