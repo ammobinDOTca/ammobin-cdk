@@ -5,7 +5,7 @@ import { Duration } from 'aws-cdk-lib'
 import * as cdk from 'aws-cdk-lib'
 import { Construct } from 'constructs';
 
-import { LOG_RETENTION, RUNTIME } from './constants'
+import { ARCH, LOG_RETENTION, RUNTIME } from './constants'
 import { FunctionUrl, FunctionUrlAuthType } from 'aws-cdk-lib/aws-lambda'
 
 export class AmmobinApiStack extends Construct {
@@ -35,6 +35,7 @@ export class AmmobinApiStack extends Construct {
       code: new lambda.AssetCode(props.CODE_BASE + 'api'),
       handler: 'api.handler',
       runtime: RUNTIME,
+      architecture: ARCH,
       environment: props.environment,
       timeout: Duration.seconds(3),
       logRetention: LOG_RETENTION
@@ -79,6 +80,7 @@ export class AmmobinApiStack extends Construct {
       code: new lambda.AssetCode(props.CODE_BASE + 'graphql'),
       handler: 'graphql.handler',
       runtime: RUNTIME,
+      architecture: ARCH,
       timeout: Duration.seconds(30),
       memorySize: 192,
       environment: props.environment,

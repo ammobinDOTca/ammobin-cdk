@@ -29,7 +29,8 @@ export class AmmobinPipelineStack extends Stack {
     super(app, id, props)
     //https://docs.aws.amazon.com/codebuild/latest/userguide/available-runtimes.html
     const API_SOURCE = 'ammobinApi'
-    const nodejs = 18
+    // todo: use own image?
+    const nodejs = 16
     const buildImage = LinuxBuildImage.fromCodeBuildImageId('aws/codebuild/amazonlinux2-x86_64-standard:4.0')// todo arm
     const CDK_BUILD_OUT = 'CdkBuildOutput'
     const API_BUILD_OUT = 'ApiBuildOutput'
@@ -96,7 +97,7 @@ export class AmmobinPipelineStack extends Stack {
     })
     s3BuildCache.addLifecycleRule({ expiration: Duration.days(30) })
 
-    const cdkBuild = new codebuild.PipelineProject(this, 'CdkBuild', {
+    const cdkBuild = new codebuild.PipelineProject(this, 'CdkBuild', { 
       buildSpec: codebuild.BuildSpec.fromObject({
         version: '0.2',
         phases: {

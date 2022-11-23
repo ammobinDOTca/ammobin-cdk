@@ -72,6 +72,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       code: new lambda.AssetCode('dist/lambdas/edge-signer'),
       handler: 'index.handler',
       runtime: RUNTIME,
+//      architecture: ARCH, todo: not supported yet
       environment: {},
       timeout: Duration.seconds(3),
       role: signerRole,
