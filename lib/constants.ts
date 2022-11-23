@@ -19,4 +19,4 @@ export const REFRESH_HOURS = 24 //things are hot right now. todo restore 24 once
 /**
  * lambda runtime nodejs version
  */
-export const RUNTIME = Runtime.NODEJS_16_X
+export const RUNTIME = Runtime.NODEJS_18_X
