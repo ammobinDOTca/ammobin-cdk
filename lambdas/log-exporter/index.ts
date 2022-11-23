@@ -1,13 +1,13 @@
 import { CloudWatchLogsEvent } from 'aws-lambda'
-import { SecretsManager } from 'aws-sdk'
+import { SecretsManager } from '@aws-sdk/client-secrets-manager'
 import { unzip } from 'zlib'
 import { promisify } from 'util'
 
 import { URL } from 'url'
 import axios from 'axios'
 
-const sm = new SecretsManager()
-
+const sm = new SecretsManager({})
+const secretPromise = sm.getSecretValue({ SecretId: process.env.ES_URL_SECRET_ID || '' })
 const region = process.env.REGION || 'unknown'
 function post(url: URL, body) {
   //https://docs.fluentd.org/input/http#how-to-use-http-content-type-header
@@ -16,7 +16,7 @@ function post(url: URL, body) {
 }
 export async function handler(event: CloudWatchLogsEvent) {
 
-  const esUrl = new URL((await sm.getSecretValue({ SecretId: process.env.ES_URL_SECRET_ID || '' }).promise()).SecretString || '')
+  const esUrl = new URL((await secretPromise).SecretString || '')
 
   const buff = await promisify(unzip)(Buffer.from(event.awslogs.data, "base64"))
   try {

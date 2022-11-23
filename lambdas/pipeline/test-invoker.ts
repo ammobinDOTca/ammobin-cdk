@@ -1,8 +1,8 @@
 import { CodePipelineEvent } from 'aws-lambda'
-import { Lambda, STS, CodePipeline } from 'aws-sdk'
-
-const sts = new STS()
-const codePipeline = new CodePipeline()
+import {Lambda, InvokeCommand} from '@aws-sdk/client-lambda'
+import {CodePipeline} from '@aws-sdk/client-codepipeline'
+import {fromTemporaryCredentials} from '@aws-sdk/credential-providers'
+const codePipeline = new CodePipeline({})
 
 export interface PipelineInvokeUserParams {
   /**
@@ -34,29 +34,20 @@ export async function handler(event: CodePipelineEvent) {
     targetRegion
   } = JSON.parse(event["CodePipeline.job"].data.actionConfiguration.configuration.UserParameters) as PipelineInvokeUserParams
 
-  const t = await sts.assumeRole({
-    RoleArn: roleArn,
-    RoleSessionName: 'ass'
-  }).promise()
-
-  if (!t.Credentials) {
-    throw 'sts did not give us creds for: ' + roleArn
-  }
-
   const lambda = new Lambda({
-    credentials: {
-      accessKeyId: t.Credentials.AccessKeyId,
-      secretAccessKey: t.Credentials.SecretAccessKey,
-      sessionToken: t.Credentials.SessionToken
-    },
+    credentials: fromTemporaryCredentials({
+      params:{
+        RoleArn:roleArn,
+      }
+    }),
     region: targetRegion
   })
 
   try {
-    const f = await lambda.invoke({
+    const f = await lambda.send(new InvokeCommand({
       FunctionName: targetFunctionArn,
-      Payload: JSON.stringify({ base })
-    }).promise()
+      Payload: Buffer.from(JSON.stringify({ base }))
+    }))
 
     console.log('f', JSON.stringify(f,null,' '))
 
@@ -66,12 +57,12 @@ export async function handler(event: CodePipelineEvent) {
         jobId: event["CodePipeline.job"].id, failureDetails: {
           message: f.FunctionError?.toString(), type: 'JobFailed'
         }
-      }).promise()
+      })
       return 'not ok'
     } else {
       await codePipeline.putJobSuccessResult({
         jobId: event["CodePipeline.job"].id
-      }).promise()
+      })
       return 'ok'
     }
   } catch (e: any) {
@@ -80,7 +71,7 @@ export async function handler(event: CodePipelineEvent) {
         message: e.toString(),
          type: 'JobFailed'
       }
-    }).promise()
+    })
     return 'not ok'
   }
 };
