@@ -106,7 +106,7 @@ new AmmobinPipelineStack(app, 'AmmobinPipelineStack', {
     region,
     account: rootAccount // only deploy to root account
   },
-  regions: ['CA', 'US'],
+  regions: ['CA'/*, 'US'*/],
   stages: ['beta', 'prod']
 })
 
