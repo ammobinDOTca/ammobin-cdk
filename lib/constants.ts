@@ -16,6 +16,7 @@ export const TEST_LAMBDA_NAME = 'ammobinIntegTest'
  */
 export const REFRESH_HOURS = 24 //things are hot right now. todo restore 24 once its cooled off
 
+export const CLEANER_HOURS = 24 * 65 // clean out records every Xdays
 /**
  * lambda runtime nodejs version
  */

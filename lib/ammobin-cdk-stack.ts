@@ -15,7 +15,7 @@ import { Topic, } from 'aws-cdk-lib/aws-sns'
 import { EmailSubscription } from 'aws-cdk-lib/aws-sns-subscriptions'
 
 import { AmmobinApiStack } from './ammobin-api-stack'
-import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS, Region, RUNTIME, ARCH } from './constants'
+import { LOG_RETENTION, Stage, TEST_LAMBDA_NAME, REFRESH_HOURS, Region, RUNTIME, ARCH, CLEANER_HOURS } from './constants'
 import { CloudwatchScheduleEvent } from './CloudWatchScheduleEvent'
 import { exportLambdaLogsToLogger, regionToAWSRegion } from './helper'
 import { AmmobinImagesStack } from './ammobin-images-stack'
@@ -165,6 +165,33 @@ export class AmmobinCdkStack extends cdk.Stack {
     // rendertronUrl.grantRead(workerLambda)
     itemsTable.grantWriteData(workerLambda)
     itemsTable.grantWriteData(largeMemoryWorkerLambda)
+
+
+    const cleanerLambda = new lambda.Function(this, 'cleaner', {
+      code: new lambda.AssetCode(CODE_BASE + 'cleaner'),
+      handler: 'cleaner.handler',
+      runtime: RUNTIME,
+      architecture: ARCH,
+      timeout: Duration.minutes(15),
+      // memorySize: 1024,
+      environment: {
+        NODE_ENV,
+        STAGE,
+        DONT_LOG_CONSOLE,
+        REGION
+      },
+      logRetention: RetentionDays.ONE_MONTH,
+      description: 'invoked by cloudwatch scheduled event to delete old records'
+    })
+
+
+    const cleanerCron = new events.Rule(this, 'cleaner', {
+      description: 'delete all records from DDB',
+      schedule: events.Schedule.rate(Duration.hours(CLEANER_HOURS)),
+      enabled: is_prod_enabled // don't run the full cron schedule for beta (todo: have refresher only do a small subset)
+    })
+    cleanerLambda.addEventSource(new CloudwatchScheduleEvent(cleanerCron))
+    itemsTable.grantWriteData(cleanerLambda)
 
     // manually set the value of this secret once created
     const esUrlSecret = is_prod_enabled ?
