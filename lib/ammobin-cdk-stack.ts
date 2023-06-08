@@ -167,7 +167,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     itemsTable.grantWriteData(largeMemoryWorkerLambda)
 
 
-    const cleanerLambda = new lambda.Function(this, 'cleaner', {
+    const cleanerLambda = new lambda.Function(this, 'cleanerLambda', {
       code: new lambda.AssetCode(CODE_BASE + 'cleaner'),
       handler: 'cleaner.handler',
       runtime: RUNTIME,
@@ -185,7 +185,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     })
 
 
-    const cleanerCron = new events.Rule(this, 'cleaner', {
+    const cleanerCron = new events.Rule(this, 'cleanerCron', {
       description: 'delete all records from DDB',
       schedule: events.Schedule.rate(Duration.hours(CLEANER_HOURS)),
       enabled: is_prod_enabled // don't run the full cron schedule for beta (todo: have refresher only do a small subset)
