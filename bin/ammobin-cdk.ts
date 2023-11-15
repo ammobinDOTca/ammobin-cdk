@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import * as cdk from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib'
 import { AmmobinCdkStack } from '../lib/ammobin-cdk-stack'
 import { AmmobinGlobalCdkStack } from '../lib/ammobin-global-cdk-stack'
 import { AmmobinPipelineStack } from '../lib/ammobin-pipeline-stack'
@@ -19,13 +19,13 @@ const {
 
 const stage = process.env['stage'] as Stage || 'prod'
 const site_region = process.env['site_region'] as Region || 'CA'
-const baseDomain = `ammobin.${site_region.toLowerCase()}`
+//const baseDomain = `ammobin.${site_region.toLowerCase()}`
 
-let publicUrl = baseDomain
-if (stage === 'beta') {
-  publicUrl = 'beta.' + baseDomain
-}
-const siteBucket = publicUrl.replace(/\./gi, '-')
+let publicUrl = 'test.ammobin.ca'
+// if (stage === 'beta') {
+//   publicUrl = 'beta.' + baseDomain
+// }
+// const siteBucket = publicUrl.replace(/\./gi, '-')
 
 const getFunctionUrls = () => {
   if (stage == 'beta') {
@@ -44,16 +44,16 @@ const getFunctionUrls = () => {
     }
   } else if (stage == "prod") {
     if (site_region === 'CA') {
-      return {
-        imageFunctionUrl: 'xsirnqhsbkrxk73yknlc6nbeqe0yvlvj.lambda-url.ca-central-1.on.aws',
-        apiFunctionUrl: "6oqoa3ajhjvogn5ivpjaqsup7q0lwosy.lambda-url.ca-central-1.on.aws",
-        graphqlFunctionUrl: 'pekphf6zumclwhxyjfk52udm7i0stsjy.lambda-url.ca-central-1.on.aws',
+      return { // old values commented out
+        imageFunctionUrl: '7pj4zb3y7xemjdzzylf45hf2ky0smgyv.lambda-url.ca-central-1.on.aws', //'xsirnqhsbkrxk73yknlc6nbeqe0yvlvj.lambda-url.ca-central-1.on.aws',
+        apiFunctionUrl: 'cjwucmk4grkasxt6vr4kaxj32y0pibjv.lambda-url.ca-central-1.on.aws',//"6oqoa3ajhjvogn5ivpjaqsup7q0lwosy.lambda-url.ca-central-1.on.aws",
+        graphqlFunctionUrl: 'bq6a6dmy3yxfts6xupo6nfexei0zqxms.lambda-url.ca-central-1.on.aws'//'pekphf6zumclwhxyjfk52udm7i0stsjy.lambda-url.ca-central-1.on.aws',
       }
     } else if (site_region == 'US') {
       return {
         imageFunctionUrl: '7dvkbg6jazyi5o55prgcmcz6va0tapak.lambda-url.us-west-2.on.aws',
         apiFunctionUrl: "dd2ljdjyjjhz5a5meml3hlax3i0fjcqk.lambda-url.us-west-2.on.aws",
-       graphqlFunctionUrl: 'gyj3dkfohpknq567iebv7gjnuq0oosff.lambda-url.us-west-2.on.aws',
+        graphqlFunctionUrl: 'gyj3dkfohpknq567iebv7gjnuq0oosff.lambda-url.us-west-2.on.aws',
       }
     }
   }
@@ -68,7 +68,6 @@ new AmmobinGlobalCdkStack(app, 'AmmobinGlobalCdkStack', {
   },
   region: site_region,
   publicUrl,
-  siteBucket,
   stage,
   email,
   ...getFunctionUrls()
@@ -89,7 +88,7 @@ new AmmobinCdkStack(app, 'AmmobinCdkStack', {
 /**
  * todo all these need to be params....
  */
-const rootAccount = '911856505652' // where route53 + pipeline exist
+const rootAccount = '733905840417' // old '911856505652' // where route53 + pipeline exist
 
 
 new IamStack(app, 'IamStack', {
@@ -110,9 +109,9 @@ new AmmobinPipelineStack(app, 'AmmobinPipelineStack', {
   stages: ['beta', 'prod']
 })
 
-new s3UploadStack(app, 's3UploadStack', {
-  bucketArn: 'arn:aws:s3:::' + siteBucket, // this comes from output of AmmobinGlobalCdkStack
-  env: {
-    region,
-  },
-})
+// new s3UploadStack(app, 's3UploadStack', {
+//   bucketArn: 'arn:aws:s3:::' + siteBucket, // this comes from output of AmmobinGlobalCdkStack
+//   env: {
+//     region,
+//   },
+// })
