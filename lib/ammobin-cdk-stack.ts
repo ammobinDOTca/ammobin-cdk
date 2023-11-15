@@ -229,16 +229,17 @@ export class AmmobinCdkStack extends cdk.Stack {
       handler: 'test.handler',
       logRetention: LOG_RETENTION,
       description: 'runs series of integ tests to make sure that nothing broke in the latest deployment'
-    });
+    })
 
-    [
-      workerLambda,
-      largeMemoryWorkerLambda,
-      refresherLambda,
-      api.lambda,
-      api.graphqlLambda,
-      testLambda
-    ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
+    // not exporting logs currently
+    // [
+    //   workerLambda,
+    //   largeMemoryWorkerLambda,
+    //   refresherLambda,
+    //   api.lambda,
+    //   api.graphqlLambda,
+    //   testLambda
+    // ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
 
 
     if (props.email) {
