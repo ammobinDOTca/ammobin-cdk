@@ -18,6 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::733905840417:role/ammobin-github-actions-role
+          aws-region: ca-central-1
 
       - uses: actions/setup-node@v3
         with:
