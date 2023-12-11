@@ -42,7 +42,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const REGION = props.region // site's region
 
     // are we live in production?
-    const is_prod_enabled = STAGE === 'prod'
+    const is_prod_enabled = true //STAGE === 'prod'
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: TABLE_NAME,

@@ -21,7 +21,7 @@ const stage = process.env['stage'] as Stage || 'prod'
 const site_region = process.env['site_region'] as Region || 'CA'
 //const baseDomain = `ammobin.${site_region.toLowerCase()}`
 
-let publicUrl = 'test.ammobin.ca'
+let publicUrl = 'ammobin.ca'
 // if (stage === 'beta') {
 //   publicUrl = 'beta.' + baseDomain
 // }
