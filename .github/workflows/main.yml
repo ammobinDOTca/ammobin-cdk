@@ -40,27 +40,10 @@ jobs:
         run: npm run build
       - name: synth
         run: |
-          mkdir -p ../ammobin-api/lambda/api
-          touch ../ammobin-api/lambda/api/da_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/graphql
-          touch ../ammobin-api/lambda/graphql/dat_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/refresher
-          touch ../ammobin-api/lambda/refresher/fat_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/worker
-          touch ../ammobin-api/lambda/worker/dis_booty.txt
-          
-          
-          mkdir -p ../ammobin-api/lambda/test
-          touch ../ammobin-api/lambda/test/fat_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/cleaner
-          touch ../ammobin-api/lambda/test/dirgy_booty.txt
           npm run cdk synth
       - name: cdk deploy gloabl
-        uses: youyo/aws-cdk-github-actions@v2
+        # uses: youyo/aws-cdk-github-actions@v2
+        uses: scottbrenner/aws-cdk-action@v1.5.0
         with:
           cdk_subcommand: 'deploy'
           cdk_stack: 'AmmobinGlobalCdkStack'
@@ -69,7 +52,8 @@ jobs:
         env:
           AWS_DEFAULT_REGION: 'us-east-1'
       - name: cdk deploy gloabl
-        uses: youyo/aws-cdk-github-actions@v2
+        # uses: youyo/aws-cdk-github-actions@v2
+        uses: scottbrenner/aws-cdk-action@v1.5.0
         with:
           cdk_subcommand: 'deploy'
           cdk_stack: 'AmmobinCdkStack'
