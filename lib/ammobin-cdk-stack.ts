@@ -42,7 +42,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const REGION = props.region // site's region
 
     // are we live in production?
-    const is_prod_enabled = STAGE === 'prod'
+    const is_prod_enabled = true //STAGE === 'prod'
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: TABLE_NAME,
@@ -58,7 +58,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const { functionUrl } = new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage, region: props.region })
     this.exportValue(functionUrl.url, { name: 'imageFunctionUrl' })
 
-    const CODE_BASE = (props.apiCode || '../ammobin-api') + '/lambda/'
+    const CODE_BASE =  'node_modules/ammobin-api/lambda/'
     console.log('CODE_BASE', CODE_BASE, props)
     const apiName = 'apiLambda'
     const api = new AmmobinApiStack(this, 'ammobin-api', {

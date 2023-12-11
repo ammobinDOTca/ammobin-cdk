@@ -7,17 +7,23 @@ on:
   # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: ['master']
-  pull_request:
-    branches: ['master']
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::733905840417:role/ammobin-github-actions-role
+          aws-region: ca-central-1
+       
 
       - uses: actions/setup-node@v3
         with:
@@ -31,22 +37,17 @@ jobs:
         run: npm run build
       - name: synth
         run: |
-          mkdir -p ../ammobin-api/lambda/api
-          touch ../ammobin-api/lambda/api/da_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/graphql
-          touch ../ammobin-api/lambda/graphql/dat_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/refresher
-          touch ../ammobin-api/lambda/refresher/fat_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/worker
-          touch ../ammobin-api/lambda/worker/dis_booty.txt
-          
-          
-          mkdir -p ../ammobin-api/lambda/test
-          touch ../ammobin-api/lambda/test/fat_booty.txt
-          
-          mkdir -p ../ammobin-api/lambda/cleaner
-          touch ../ammobin-api/lambda/test/dirgy_booty.txt
           npm run cdk synth
+      - name: cdk deploy global
+        uses: scottbrenner/aws-cdk-action@v1.5.0
+        with:
+          args: 'deploy AmmobinGlobalCdkStack'
+        env:
+          AWS_DEFAULT_REGION: 'us-east-1'
+      - name: cdk deploy api ca prod
+        uses: scottbrenner/aws-cdk-action@v1.5.0
+        with:
+          args: 'deploy AmmobinCdkStack'
+        env:
+          AWS_DEFAULT_REGION: 'ca-central-1'
+
