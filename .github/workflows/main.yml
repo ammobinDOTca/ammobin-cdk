@@ -45,10 +45,10 @@ jobs:
         # uses: youyo/aws-cdk-github-actions@v2
         uses: scottbrenner/aws-cdk-action@v1.5.0
         with:
-          cdk_subcommand: 'deploy'
-          cdk_stack: 'AmmobinGlobalCdkStack'
-          cdk_args: '--require-approval never'
-          actions_comment: false
+          args: 'deploy AmmobinGlobalCdkStack'
+          # cdk_stack: 'AmmobinGlobalCdkStack'
+          # cdk_args: '--require-approval never'
+          # actions_comment: false
         env:
           AWS_DEFAULT_REGION: 'us-east-1'
       - name: cdk deploy gloabl
