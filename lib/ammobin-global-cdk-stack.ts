@@ -20,7 +20,6 @@ import { regionToAWSRegion } from './helper'
 
 interface IAmmobinGlobalCdkStackProps extends cdk.StackProps {
   publicUrl: string,
-  siteBucket: string,
   stage: Stage,
   region: Region,
   email?: string,
@@ -72,7 +71,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       code: new lambda.AssetCode('dist/lambdas/edge-signer'),
       handler: 'index.handler',
       runtime: RUNTIME,
-//      architecture: ARCH, todo: not supported yet
+      //      architecture: ARCH, todo: not supported yet
       environment: {},
       timeout: Duration.seconds(3),
       role: signerRole,
@@ -80,31 +79,12 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
       description: ''
     })
 
-    const edgeSignerVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge-signer/index.ts')+sha256('lambdas/edge-signer/package-lock.json'), {
+    const edgeSignerVersion = new lambda.Version(this, 'V' + sha256('lambdas/edge-signer/index.ts') + sha256('lambdas/edge-signer/package-lock.json'), {
       lambda: edgeSigner,
     })
 
 
-    const originAccessIdentity = new cloudfront.OriginAccessIdentity(this, 'siteBucketAccess', {
-      comment: 'let cloudfront access the site bucket'
-    })
-
-    // todo: delete this bucket if/when github page alternative is confirmed working
-    // Content bucket
-    const siteBucket = new s3.Bucket(this, 'SiteBucket', {
-      bucketName: props.siteBucket,
-      publicReadAccess: false,
-    })
-    siteBucket.addLifecycleRule({ expiration: Duration.days(30) })
-    new cdk.CfnOutput(this, 'siteBucket', { value: siteBucket.bucketName })
-
-    new s3.BucketPolicy(this, "BucketPolicy", {
-      bucket: siteBucket,
-    }).document.addStatements(new PolicyStatement({
-      actions: ['s3:GetObject'],
-      principals: [new CanonicalUserPrincipal(originAccessIdentity.cloudFrontOriginAccessIdentityS3CanonicalUserId)],
-      resources: ["arn:aws:s3:::" + siteBucket.bucketName + "/*"]
-    }))
+    const cfWorker = "ammobin-client-test.ammobin.workers.dev" // todo: restore ? `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
 
     const distribution =
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
@@ -139,7 +119,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
         originConfigs: [
           {
             customOriginSource: {
-              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`,
+              domainName: cfWorker,
             },
             // todo: add old generated client as fallback?
             behaviors: [
@@ -183,7 +163,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
           {
             // enforce much higher TTL on webassets from worker to keep down uneeded traffic
             customOriginSource: {
-              domainName: `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
+              domainName: cfWorker
             },
             behaviors: [
               {
@@ -209,7 +189,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                   {
                     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
                     lambdaFunction: edgeSignerVersion,
-                    includeBody:true
+                    includeBody: true
                   }
                 ] : undefined,
                 forwardedValues: {
@@ -272,7 +252,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
                   {
                     eventType: LambdaEdgeEventType.ORIGIN_REQUEST,
                     lambdaFunction: edgeSignerVersion,
-                    includeBody:true
+                    includeBody: true
                   }
                 ] : undefined,
                 forwardedValues: {

@@ -42,7 +42,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const REGION = props.region // site's region
 
     // are we live in production?
-    const is_prod_enabled = false // shuting things down //STAGE === 'prod'
+    const is_prod_enabled = STAGE === 'prod'
 
     const itemsTable = new dynamodb.Table(this, 'table', {
       tableName: TABLE_NAME,
@@ -64,7 +64,6 @@ export class AmmobinCdkStack extends cdk.Stack {
     const api = new AmmobinApiStack(this, 'ammobin-api', {
       name: apiName,
       CODE_BASE,
-      url: 'api.' + props.publicUrl,
       environment: {
         TABLE_NAME,
         PRIMARY_KEY,
@@ -194,10 +193,10 @@ export class AmmobinCdkStack extends cdk.Stack {
     itemsTable.grantWriteData(cleanerLambda)
 
     // manually set the value of this secret once created
-    const esUrlSecret = is_prod_enabled ?
-      new Secret(this, 'esUrlSecret', {
-        description: 'url with user + pass to send logs to. should be in the form https://user:password@example.com',
-      }) : null
+    // const esUrlSecret = is_prod_enabled ?
+    //   new Secret(this, 'esUrlSecret', {
+    //     description: 'url with user + pass to send logs to. should be in the form https://user:password@example.com',
+    //   }) : null
 
     const logExporter = new lambda.Function(this, 'logExporter', {
       code: new lambda.AssetCode('./dist/lambdas/log-exporter'),
@@ -211,13 +210,13 @@ export class AmmobinCdkStack extends cdk.Stack {
         STAGE,
         DONT_LOG_CONSOLE,
         REGION,
-        ES_URL_SECRET_ID: esUrlSecret?.secretArn || ''
+        //  ES_URL_SECRET_ID: esUrlSecret?.secretArn || ''
       },
       logRetention: RetentionDays.THREE_DAYS,
       description: 'moves logs from cloudwatch to elasticsearch'
     })
     if (is_prod_enabled) {
-      esUrlSecret?.grantRead(logExporter)
+      //  esUrlSecret?.grantRead(logExporter)
     }
     logExporter.grantInvoke(new iam.ServicePrincipal(`logs.amazonaws.com`, {}))
 
@@ -230,16 +229,17 @@ export class AmmobinCdkStack extends cdk.Stack {
       handler: 'test.handler',
       logRetention: LOG_RETENTION,
       description: 'runs series of integ tests to make sure that nothing broke in the latest deployment'
-    });
+    })
 
-    [
-      workerLambda,
-      largeMemoryWorkerLambda,
-      refresherLambda,
-      api.lambda,
-      api.graphqlLambda,
-      testLambda
-    ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
+    // not exporting logs currently
+    // [
+    //   workerLambda,
+    //   largeMemoryWorkerLambda,
+    //   refresherLambda,
+    //   api.lambda,
+    //   api.graphqlLambda,
+    //   testLambda
+    // ].forEach(l => exportLambdaLogsToLogger(this, l, logExporter))
 
 
     if (props.email) {
@@ -322,7 +322,7 @@ export class AmmobinCdkStack extends cdk.Stack {
       code,
       handler: 'worker.handler',
       runtime: RUNTIME,
-//      architecture: ARCH, TODO    
+      //      architecture: ARCH, TODO
       timeout,
       memorySize,
       environment,
