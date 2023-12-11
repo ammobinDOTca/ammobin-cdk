@@ -58,7 +58,7 @@ export class AmmobinCdkStack extends cdk.Stack {
     const { functionUrl } = new AmmobinImagesStack(this, 'ammobinImages', { url: 'images.' + props.publicUrl, stage: props.stage, region: props.region })
     this.exportValue(functionUrl.url, { name: 'imageFunctionUrl' })
 
-    const CODE_BASE = (props.apiCode || '../ammobin-api') + '/lambda/'
+    const CODE_BASE =  'node_modules/ammobin-api/lambda/'
     console.log('CODE_BASE', CODE_BASE, props)
     const apiName = 'apiLambda'
     const api = new AmmobinApiStack(this, 'ammobin-api', {
