@@ -59,3 +59,22 @@ jobs:
           mkdir -p ../ammobin-api/lambda/cleaner
           touch ../ammobin-api/lambda/test/dirgy_booty.txt
           npm run cdk synth
+      - name: cdk deploy gloabl
+        uses: youyo/aws-cdk-github-actions@v2
+        with:
+          cdk_subcommand: 'deploy'
+          cdk_stack: 'AmmobinGlobalCdkStack'
+          cdk_args: '--require-approval never'
+          actions_comment: false
+        env:
+          AWS_DEFAULT_REGION: 'us-east-1'
+      - name: cdk deploy gloabl
+        uses: youyo/aws-cdk-github-actions@v2
+        with:
+          cdk_subcommand: 'deploy'
+          cdk_stack: 'AmmobinCdkStack'
+          cdk_args: '--require-approval never'
+          actions_comment: false
+        env:
+          AWS_DEFAULT_REGION: 'ca-central-1'
+
