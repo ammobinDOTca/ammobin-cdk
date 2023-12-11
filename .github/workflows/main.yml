@@ -41,24 +41,16 @@ jobs:
       - name: synth
         run: |
           npm run cdk synth
-      - name: cdk deploy gloabl
-        # uses: youyo/aws-cdk-github-actions@v2
+      - name: cdk deploy global
         uses: scottbrenner/aws-cdk-action@v1.5.0
         with:
           args: 'deploy AmmobinGlobalCdkStack'
-          # cdk_stack: 'AmmobinGlobalCdkStack'
-          # cdk_args: '--require-approval never'
-          # actions_comment: false
         env:
           AWS_DEFAULT_REGION: 'us-east-1'
-      - name: cdk deploy gloabl
-        # uses: youyo/aws-cdk-github-actions@v2
+      - name: cdk deploy api ca prod
         uses: scottbrenner/aws-cdk-action@v1.5.0
         with:
-          cdk_subcommand: 'deploy'
-          cdk_stack: 'AmmobinCdkStack'
-          cdk_args: '--require-approval never'
-          actions_comment: false
+          args: 'deploy AmmobinCdkStack'
         env:
           AWS_DEFAULT_REGION: 'ca-central-1'
 
