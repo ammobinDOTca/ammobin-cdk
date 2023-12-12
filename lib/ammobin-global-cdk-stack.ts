@@ -84,7 +84,7 @@ export class AmmobinGlobalCdkStack extends cdk.Stack {
     })
 
 
-    const cfWorker = "ammobin-client-test.ammobin.workers.dev" // todo: restore ? `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
+    const cfWorker = "ammobin-new.s3ramsay.workers.dev" // todo: restore ? `ammobin_nuxt_${props.region.toLowerCase()}_${props.stage.toLowerCase()}.ammobin.workers.dev`
 
     const distribution =
       new cloudfront.CloudFrontWebDistribution(this, 'SiteDistribution', {
